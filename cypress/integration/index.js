@@ -427,7 +427,7 @@ describe('Callbacks', function() {
         });
     });
 
-    it.only('should trigger onCompletePjax', function() {
+    it('should trigger onCompletePjax', function() {
         cy.window().then(win => {
             fetchFactory(win, {
                 callbacks: {
