@@ -1,7 +1,7 @@
 # Fetch Pjax
-> Enables PJAX (PushState + Ajax) navigation functionality using the native Fetch API
+> PJAX (PushState + Ajax) navigation functionality using the native Fetch API
 
-Fetch Pjax uses Ajax (via `fetch`) to deliver a super fast browsing experience by loading HTML from your server and replacing only the relevant portions of the page from the Ajax'd HTML. This means the browser doesn't have to reload the page CSS/JavaScript on each request (as it does on a normal page request) which therefore delivers a lighting fast page load.
+Fetch Pjax uses Ajax (via `fetch`) to deliver a super fast browsing experience by loading HTML from your server and replacing only the relevant portions of the page with the Ajax'd HTML. This means the browser doesn't have to reload the page CSS/JavaScript on each request (as it does on a normal page request) which therefore delivers a lighting fast page load.
 
 Fetch Pjax provides full url, back button and history support via liberal usage of `history.pushState` and the `window.onpopstate` event. 
 
