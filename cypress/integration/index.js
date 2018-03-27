@@ -4,7 +4,7 @@ const baseUrl = 'http://localhost:8080';
 const page1Url = '/page1.html';
 const page2Url = '/page2.html';
 
-function fetchFactory(cyWindow, args = {}) {
+function fetchPjaxFactory(cyWindow, args = {}) {
     const FetchPjax = cyWindow.FetchPjax;
     return new FetchPjax(args);
 }
@@ -33,7 +33,7 @@ describe('Defaults', function() {
 
     it('should work with defaults', function() {
         cy.window().then(win => {
-            fetchFactory(win);
+            fetchPjaxFactory(win);
 
             cy.get('[data-cy-link]').click();
 
@@ -68,7 +68,7 @@ describe('Defaults', function() {
 
             const spy = cy.spy(FetchPjax.prototype, 'init').as('spyInit');
 
-            const subject = fetchFactory(win, {
+            const subject = fetchPjaxFactory(win, {
                 autoInit: false
             });
 
@@ -88,7 +88,7 @@ describe('Render Targets', function() {
 
     it('should handle multiple render targets', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 targets: {
                     title: 'title',
                     content: 'main',
@@ -113,7 +113,7 @@ describe('Render Targets', function() {
             const missingTargetId = 'flibbleWibble';
             const missingTargetSelector = '.flibblywibbly';
 
-            const subject = fetchFactory(win, {
+            const subject = fetchPjaxFactory(win, {
                 autoInit: false, // important!
                 targets: {
                     title: 'title',
@@ -139,7 +139,7 @@ describe('Render Targets', function() {
 
     it('should handle custom renderers', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 targets: {
                     title: 'title',
                     content: 'main',
@@ -177,7 +177,7 @@ describe('Customisation of Headers', function() {
 
     it('should set the X-PJAX header by default', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 fetchOptions: {
                     headers: {
                         'X-PJAX': true
@@ -202,7 +202,7 @@ describe('Customisation of Headers', function() {
         cy.window().then(win => {
             const token = btoa('someuser:somepassword');
 
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 fetchOptions: {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -236,7 +236,7 @@ describe('Navigation Event Types', function() {
     describe('Selectors', function() {
         it('should listen on <a> elements by default', function() {
             cy.window().then(win => {
-                const subject = fetchFactory(win);
+                const subject = fetchPjaxFactory(win);
 
                 cy.spyOnFetchPjax(subject, 'doPjax');
 
@@ -250,7 +250,7 @@ describe('Navigation Event Types', function() {
             cy.window().then(win => {
                 const selector = '.special-selector a';
 
-                const subject = fetchFactory(win, {
+                const subject = fetchPjaxFactory(win, {
                     selector
                 });
 
@@ -268,7 +268,7 @@ describe('Navigation Event Types', function() {
             cy.window().then(win => {
                 const eventType = 'touchstart';
 
-                const subject = fetchFactory(win, {
+                const subject = fetchPjaxFactory(win, {
                     eventType
                 });
 
@@ -300,7 +300,7 @@ describe('Forms', function() {
 
             const expectedQs = `?firstname=${firstName}lastname=${lastName}`;
 
-            const subject = fetchFactory(win);
+            const subject = fetchPjaxFactory(win);
 
             cy.spyOnFetchPjax(subject, 'doPjax');
 
@@ -328,7 +328,7 @@ describe('History API', function() {
 
     it('should append url & DOM contents to History state', function() {
         cy.window().then(win => {
-            fetchFactory(win);
+            fetchPjaxFactory(win);
 
             // Click on Index Page
             cy.get('[data-cy-link]').click().then(() => {
@@ -385,7 +385,7 @@ describe('Callbacks', function() {
 
     it('should trigger onBeforePjax', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 callbacks: {
                     onBeforePjax: cbStubFunc
                 }
@@ -403,7 +403,7 @@ describe('Callbacks', function() {
 
     it('should trigger onSuccessPjax with correct args', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 callbacks: {
                     onSuccessPjax: cbStubFunc
                 }
@@ -427,7 +427,7 @@ describe('Callbacks', function() {
 
     it('should trigger onCompletePjax on happy path', function() {
         cy.window().then(win => {
-            fetchFactory(win, {
+            fetchPjaxFactory(win, {
                 callbacks: {
                     onCompletePjax: cbStubFunc
                 }
@@ -443,7 +443,7 @@ describe('Callbacks', function() {
         });
     });
 
-    describe.only('Error callback handling', () => {
+    describe('Error callback handling', () => {
         let errorStubFunc;
         let successStubFunc;
         let completeStubFunc;
@@ -463,7 +463,7 @@ describe('Callbacks', function() {
                     .stub(win, 'fetch', () => Promise.reject(errorMsg))
                     .as('windowFetchStub');
 
-                fetchFactory(win, {
+                fetchPjaxFactory(win, {
                     callbacks: {
                         onSuccessPjax: successStubFunc,
                         onErrorPjax: errorStubFunc,
@@ -497,7 +497,7 @@ describe('Callbacks', function() {
                     .stub(win, 'fetch', () => Promise.resolve(errorResponse))
                     .as('windowFetchStub');
 
-                fetchFactory(win, {
+                fetchPjaxFactory(win, {
                     callbacks: {
                         onSuccessPjax: successStubFunc,
                         onErrorPjax: errorStubFunc,
@@ -519,4 +519,147 @@ describe('Callbacks', function() {
             });
         });
     });
+
+    describe('Render callbacks', () => {
+        it('should call before/after Render callbacks before/after  render cycle', () => {
+            const beforeRenderStub = cy.stub().as('stubBeforeRender');
+            const afterRenderStub = cy.stub().as('stubAfterRender');
+
+            cy.window().then(win => {
+                fetchPjaxFactory(win, {
+                    callbacks: {
+                        onBeforeRender: beforeRenderStub,
+                        onAfterRender: afterRenderStub
+                    }
+                });
+            });
+
+            cy.get('[data-cy-link]').click();
+
+            // Specifically this should be called once only!
+            cy.get('@stubBeforeRender').should('be.calledOnce');
+            cy.get('@stubAfterRender').should('be.calledOnce');
+        });
+
+        it('should call before/after callbacks for each render target', () => {
+            const beforeRenderSpy = cy.spy().as('stubBeforeTargetRender');
+            const afterRenderSpy = cy.spy().as('stubAfterTargetRender');
+
+            cy.window().then(win => {
+                fetchPjaxFactory(win, {
+                    targets: {
+                        title: 'title',
+                        content: 'main',
+                        aside: '.sidebar'
+                    },
+                    callbacks: {
+                        onBeforeTargetRender: beforeRenderSpy,
+                        onAfterTargetRender: afterRenderSpy
+                    }
+                });
+            });
+
+            cy.get('[data-cy-link]').click().then(() => {
+                expect(beforeRenderSpy).to.be.calledThrice;
+                expect(afterRenderSpy).to.be.calledThrice;
+
+                // Verify all calls have the required keys
+                beforeRenderSpy.getCalls().forEach(call => {
+                    const beforeArgs = beforeRenderSpy.args[0][1];
+
+                    expect(beforeArgs).to.have.all.keys([
+                        'targetKey',
+                        'targetEl',
+                        'renderer',
+                        'contentEl'
+                    ]);
+                });
+
+                // 1st call
+                expect(beforeRenderSpy.getCall(0).args[1].targetKey).to.eq(
+                    'title'
+                );
+
+                // 2nd call
+                expect(beforeRenderSpy.getCall(1).args[1].targetKey).to.eq(
+                    'content'
+                );
+
+                // 3rd call
+                expect(beforeRenderSpy.getCall(2).args[1].targetKey).to.eq(
+                    'aside'
+                );
+            });
+
+            // Specifically this should be called once only!
+            // cy.get('@stubBeforeTargetRender').should('be.calledThrice');
+            // cy.get('@stubAfterTargetRender').should('be.calledThrice');
+        });
+    });
+});
+
+describe('Overiding fetch options', () => {
+    let windowFetchSpy;
+
+    beforeEach(() => {
+        cy.visit('/', {
+            onBeforeLoad(win) {
+                windowFetchSpy = cy.spy(win, 'fetch').as('windowFetch');
+            }
+        });
+    });
+
+    it.only(
+        'should allow overiding of fetchOptions on a per request basis',
+        function() {
+            const headerValuePage1 = 'the value for page1 url';
+            const headerValuePage2 = 'the value for page2 url';
+
+            cy.window().then(win => {
+                fetchPjaxFactory(win, {
+                    fetchOptions: {
+                        headers: {
+                            'X-SOME-HEADER': true // the base
+                        }
+                    },
+                    beforeSend: fetchOptions => {
+                        // Set different fetchOptions for different urls
+                        if (fetchOptions.url.includes('page1')) {
+                            return {
+                                headers: {
+                                    'X-ANOTHER-HEADER': headerValuePage1
+                                }
+                            };
+                        }
+
+                        if (fetchOptions.url.includes('page2')) {
+                            return {
+                                headers: {
+                                    'X-ANOTHER-HEADER': headerValuePage2
+                                }
+                            };
+                        }
+                    }
+                });
+
+                // Navigate to /page1.html
+                cy.get('[data-cy-link="page1"]').click().then(() => {
+                    const fetchArgsCallOne = windowFetchSpy.getCall(0).args[1];
+                    expect(fetchArgsCallOne.headers).to.include({
+                        'X-SOME-HEADER': true,
+                        'X-ANOTHER-HEADER': 'the value for page1 url'
+                    });
+                });
+
+                // Navigate to /page2.html
+                cy.get('[data-cy-link="page2"]').click().then(() => {
+                    const fetchArgsCallTwo = windowFetchSpy.getCall(1).args[1];
+                    expect(fetchArgsCallTwo.headers).to.include({
+                        'X-SOME-HEADER': true,
+                        'X-ANOTHER-HEADER': 'the value for page2 url'
+                    });
+                });
+            });
+        }
+    );
 });
