@@ -268,9 +268,7 @@ class FetchPjax {
 				// Reset Pjax state
 				this.isPjaxing = false;
 
-				this.triggerCallback('onErrorPjax', {
-					error
-				});
+				this.triggerCallback('onErrorPjax', error);
 				this.triggerCallback('onCompletePjax');
 			});
 	}
@@ -284,7 +282,7 @@ class FetchPjax {
 						status: response.status,
 						statusText: response.statusText
 					},
-					text
+					response
 				)
 			);
 		}

@@ -443,18 +443,24 @@ describe('Callbacks', function() {
         });
     });
 
-    it.only(
-        'should trigger onErrorPjax and onCompletePjax on fetch error',
-        function() {
-            const errorStubFunc = cy.stub().as('stubCbError');
-            const successStubFunc = cy.stub().as('stubCbSuccess');
-            const completeStubFunc = cy.stub().as('stubCbComplete');
+    describe.only('Error callback handling', () => {
+        let errorStubFunc;
+        let successStubFunc;
+        let completeStubFunc;
+        let fauxFetchFunc;
+
+        beforeEach(() => {
+            errorStubFunc = cy.stub().as('stubCbError');
+            successStubFunc = cy.stub().as('stubCbSuccess');
+            completeStubFunc = cy.stub().as('stubCbComplete');
+        });
+
+        it('should trigger onErrorPjax and onCompletePjax on fetch failure', function() {
+            const errorMsg = 'Some error message';
 
             cy.window().then(win => {
                 cy
-                    .stub(win, 'fetch', () =>
-                        Promise.reject('Some error message')
-                    )
+                    .stub(win, 'fetch', () => Promise.reject(errorMsg))
                     .as('windowFetchStub');
 
                 fetchFactory(win, {
@@ -468,9 +474,7 @@ describe('Callbacks', function() {
                 cy.get('[data-cy-link]').click().then(() => {
                     expect(errorStubFunc).to.be.calledOnce;
 
-                    expect(errorStubFunc.args[0][1]).to.include({
-                        error: 'Some error message'
-                    });
+                    expect(errorStubFunc.args[0][1]).to.include(errorMsg);
                 });
 
                 // Complete should be called on happy and error paths
@@ -479,6 +483,40 @@ describe('Callbacks', function() {
                 // Double check success wasn't called
                 cy.get('@stubCbSuccess').should('not.be.called');
             });
-        }
-    );
+        });
+
+        it('should trigger onErrorPjax and onCompletePjax when fetch response status is no "ok"', function() {
+            const errorResponse = {
+                ok: false,
+                status: 'Not good',
+                statusText: 'Some bad things happened'
+            };
+
+            cy.window().then(win => {
+                cy
+                    .stub(win, 'fetch', () => Promise.resolve(errorResponse))
+                    .as('windowFetchStub');
+
+                fetchFactory(win, {
+                    callbacks: {
+                        onSuccessPjax: successStubFunc,
+                        onErrorPjax: errorStubFunc,
+                        onCompletePjax: completeStubFunc
+                    }
+                });
+
+                cy.get('[data-cy-link]').click().then(() => {
+                    expect(errorStubFunc).to.be.calledOnce;
+
+                    expect(errorStubFunc.args[0][1]).to.include(errorResponse);
+                });
+
+                // Complete should be called on happy and error paths
+                cy.get('@stubCbComplete').should('be.calledOnce');
+
+                // Double check success wasn't called
+                cy.get('@stubCbSuccess').should('not.be.called');
+            });
+        });
+    });
 });

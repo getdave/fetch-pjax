@@ -805,9 +805,7 @@
 					// Reset Pjax state
 					this.isPjaxing = false;
 
-					this.triggerCallback('onErrorPjax', {
-						error
-					});
+					this.triggerCallback('onErrorPjax', error);
 					this.triggerCallback('onCompletePjax');
 				});
 		}
@@ -821,7 +819,7 @@
 							status: response.status,
 							statusText: response.statusText
 						},
-						text
+						response
 					)
 				);
 			}
