@@ -282,7 +282,7 @@ describe('Navigation Event Types', function() {
     });
 });
 
-describe('Forms', function() {
+describe('Handling Forms', function() {
     beforeEach(() => {
         cy.visit('/', {
             onBeforeLoad(win) {
@@ -383,7 +383,7 @@ describe('Callbacks', function() {
         cbStubFunc = cy.stub().as('stubCb'); // aliased for reuse
     });
 
-    it('should trigger onBeforePjax', function() {
+    it('should trigger onBeforePjax before PJAX request', function() {
         cy.window().then(win => {
             fetchPjaxFactory(win, {
                 callbacks: {
@@ -401,7 +401,7 @@ describe('Callbacks', function() {
         });
     });
 
-    it('should trigger onSuccessPjax with correct args', function() {
+    it('should trigger onSuccessPjax with correct args on successful PJAX request', function() {
         cy.window().then(win => {
             fetchPjaxFactory(win, {
                 callbacks: {
@@ -425,7 +425,7 @@ describe('Callbacks', function() {
         });
     });
 
-    it('should trigger onCompletePjax on happy path', function() {
+    it('should trigger onCompletePjax after PJAX on happy path', function() {
         cy.window().then(win => {
             fetchPjaxFactory(win, {
                 callbacks: {
@@ -455,7 +455,7 @@ describe('Callbacks', function() {
             completeStubFunc = cy.stub().as('stubCbComplete');
         });
 
-        it('should trigger onErrorPjax and onCompletePjax on fetch failure', function() {
+        it('should trigger onErrorPjax and onCompletePjax callbacks on PJAX failure', function() {
             const errorMsg = 'Some error message';
 
             cy.window().then(win => {
@@ -609,57 +609,54 @@ describe('Overiding fetch options', () => {
         });
     });
 
-    it.only(
-        'should allow overiding of fetchOptions on a per request basis',
-        function() {
-            const headerValuePage1 = 'the value for page1 url';
-            const headerValuePage2 = 'the value for page2 url';
+    it('should allow overiding of fetchOptions on a per request basis', function() {
+        const headerValuePage1 = 'the value for page1 url';
+        const headerValuePage2 = 'the value for page2 url';
 
-            cy.window().then(win => {
-                fetchPjaxFactory(win, {
-                    fetchOptions: {
-                        headers: {
-                            'X-SOME-HEADER': true // the base
-                        }
-                    },
-                    beforeSend: fetchOptions => {
-                        // Set different fetchOptions for different urls
-                        if (fetchOptions.url.includes('page1')) {
-                            return {
-                                headers: {
-                                    'X-ANOTHER-HEADER': headerValuePage1
-                                }
-                            };
-                        }
-
-                        if (fetchOptions.url.includes('page2')) {
-                            return {
-                                headers: {
-                                    'X-ANOTHER-HEADER': headerValuePage2
-                                }
-                            };
-                        }
+        cy.window().then(win => {
+            fetchPjaxFactory(win, {
+                fetchOptions: {
+                    headers: {
+                        'X-SOME-HEADER': true // the base
                     }
-                });
+                },
+                beforeSend: fetchOptions => {
+                    // Set different fetchOptions for different urls
+                    if (fetchOptions.url.includes('page1')) {
+                        return {
+                            headers: {
+                                'X-ANOTHER-HEADER': headerValuePage1
+                            }
+                        };
+                    }
 
-                // Navigate to /page1.html
-                cy.get('[data-cy-link="page1"]').click().then(() => {
-                    const fetchArgsCallOne = windowFetchSpy.getCall(0).args[1];
-                    expect(fetchArgsCallOne.headers).to.include({
-                        'X-SOME-HEADER': true,
-                        'X-ANOTHER-HEADER': 'the value for page1 url'
-                    });
-                });
+                    if (fetchOptions.url.includes('page2')) {
+                        return {
+                            headers: {
+                                'X-ANOTHER-HEADER': headerValuePage2
+                            }
+                        };
+                    }
+                }
+            });
 
-                // Navigate to /page2.html
-                cy.get('[data-cy-link="page2"]').click().then(() => {
-                    const fetchArgsCallTwo = windowFetchSpy.getCall(1).args[1];
-                    expect(fetchArgsCallTwo.headers).to.include({
-                        'X-SOME-HEADER': true,
-                        'X-ANOTHER-HEADER': 'the value for page2 url'
-                    });
+            // Navigate to /page1.html
+            cy.get('[data-cy-link="page1"]').click().then(() => {
+                const fetchArgsCallOne = windowFetchSpy.getCall(0).args[1];
+                expect(fetchArgsCallOne.headers).to.include({
+                    'X-SOME-HEADER': true,
+                    'X-ANOTHER-HEADER': 'the value for page1 url'
                 });
             });
-        }
-    );
+
+            // Navigate to /page2.html
+            cy.get('[data-cy-link="page2"]').click().then(() => {
+                const fetchArgsCallTwo = windowFetchSpy.getCall(1).args[1];
+                expect(fetchArgsCallTwo.headers).to.include({
+                    'X-SOME-HEADER': true,
+                    'X-ANOTHER-HEADER': 'the value for page2 url'
+                });
+            });
+        });
+    });
 });
