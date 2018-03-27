@@ -776,7 +776,6 @@
 			});
 
 			// requestOptions.headers = new Headers(requestOptions.headers);
-
 			fetch(requestOptions.url, requestOptions)
 				.then(response => {
 					// Reset Pjax state
@@ -806,7 +805,6 @@
 					// Reset Pjax state
 					this.isPjaxing = false;
 
-					console.log(error);
 					this.triggerCallback('onErrorPjax', {
 						error
 					});

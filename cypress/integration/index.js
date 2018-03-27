@@ -377,12 +377,10 @@ describe('Callbacks', function() {
 
     beforeEach(() => {
         cy.visit('/', {
-            onBeforeLoad(win) {
-                cy.spy(win, 'fetch').as('windowFetch');
-            }
+            onBeforeLoad(win) {}
         });
 
-        cbStubFunc = cy.stub().as('stubCb');
+        cbStubFunc = cy.stub().as('stubCb'); // aliased for reuse
     });
 
     it('should trigger onBeforePjax', function() {
@@ -403,7 +401,7 @@ describe('Callbacks', function() {
         });
     });
 
-    it('should trigger onSuccessPjax', function() {
+    it('should trigger onSuccessPjax with correct args', function() {
         cy.window().then(win => {
             fetchFactory(win, {
                 callbacks: {
@@ -427,7 +425,7 @@ describe('Callbacks', function() {
         });
     });
 
-    it('should trigger onCompletePjax', function() {
+    it('should trigger onCompletePjax on happy path', function() {
         cy.window().then(win => {
             fetchFactory(win, {
                 callbacks: {
@@ -444,4 +442,43 @@ describe('Callbacks', function() {
             cy.get('@stubCb').should('be.calledTwice');
         });
     });
+
+    it.only(
+        'should trigger onErrorPjax and onCompletePjax on fetch error',
+        function() {
+            const errorStubFunc = cy.stub().as('stubCbError');
+            const successStubFunc = cy.stub().as('stubCbSuccess');
+            const completeStubFunc = cy.stub().as('stubCbComplete');
+
+            cy.window().then(win => {
+                cy
+                    .stub(win, 'fetch', () =>
+                        Promise.reject('Some error message')
+                    )
+                    .as('windowFetchStub');
+
+                fetchFactory(win, {
+                    callbacks: {
+                        onSuccessPjax: successStubFunc,
+                        onErrorPjax: errorStubFunc,
+                        onCompletePjax: completeStubFunc
+                    }
+                });
+
+                cy.get('[data-cy-link]').click().then(() => {
+                    expect(errorStubFunc).to.be.calledOnce;
+
+                    expect(errorStubFunc.args[0][1]).to.include({
+                        error: 'Some error message'
+                    });
+                });
+
+                // Complete should be called on happy and error paths
+                cy.get('@stubCbComplete').should('be.calledOnce');
+
+                // Double check success wasn't called
+                cy.get('@stubCbSuccess').should('not.be.called');
+            });
+        }
+    );
 });
