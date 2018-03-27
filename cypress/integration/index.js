@@ -31,7 +31,7 @@ describe('Defaults', function() {
         });
     });
 
-    it('should work with defaults', function() {
+    it('should "just work" with defaults', function() {
         cy.window().then(win => {
             fetchPjaxFactory(win);
 
@@ -657,6 +657,93 @@ describe('Overiding fetch options', () => {
                     'X-ANOTHER-HEADER': 'the value for page2 url'
                 });
             });
+        });
+    });
+});
+
+describe('Popstate handling', () => {
+    beforeEach(() => {
+        cy.visit('/', {
+            onBeforeLoad(win) {}
+        });
+    });
+    it('should use previously cached contents on popstate to previously visted url', () => {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('[data-cy-link="page1"]').click();
+
+            cy.get('[data-cy-link="page2"]').click();
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+            cy.spyOnFetchPjax(subject, 'handlePopState');
+            cy.spyOnFetchPjax(subject, 'render');
+
+            // Triggers the window.onpopstate event
+            cy.go('back');
+
+            // Have we used the cache?
+            cy.get('@spyHandlePopState').should('be.called');
+            cy.get('@spyDoPjax').should('not.be.called');
+
+            cy.get('@spyRender').should('be.called');
+        });
+    });
+
+    it('should not use previously cached contents on popstate when "popStateUseContentCache" option is false', () => {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win, {
+                popStateUseContentCache: false
+            });
+
+            cy.get('[data-cy-link="page1"]').click();
+
+            cy.get('[data-cy-link="page2"]').click();
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+            cy.spyOnFetchPjax(subject, 'handlePopState');
+
+            // Triggers the window.onpopstate event
+            cy.go('back');
+
+            cy.get('@spyHandlePopState').should('be.called');
+
+            // If this is called then we've hard-requested the content
+            cy.get('@spyDoPjax').should('be.called');
+        });
+    });
+
+    it('should correctly use "popStateFauxLoadTime" as value for fake timeout for popstate', () => {
+        // Set artificially high timeout so there can't realistically
+        // be anything masking the timeout taking THIS long!
+        const popStateFauxLoadTime = 20000; // 20secs
+
+        // Control the clock
+        cy.clock();
+
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win, {
+                popStateFauxLoadTime
+            });
+
+            cy.get('[data-cy-link="page1"]').click();
+
+            cy.get('[data-cy-link="page2"]').click();
+
+            cy.spyOnFetchPjax(subject, 'render');
+
+            // Triggers the window.onpopstate event
+            cy.go('back');
+
+            // Shouldn't be called immediately as there is a
+            // timeout set
+            cy.get('@spyRender').should('not.be.called');
+
+            // Tick the clock on by the value set in options
+            cy.tick(popStateFauxLoadTime);
+
+            // Only now the render method should be called
+            cy.get('@spyRender').should('be.called');
         });
     });
 });
