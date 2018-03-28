@@ -3399,6 +3399,8 @@
 				return;
 			}
 
+			// Check we hit "Enter" on a matching target element
+			// else it just fires for everything!
 			const target = this.checkMatchingTarget(e);
 
 			if (target) {

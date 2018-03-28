@@ -2,7 +2,6 @@ import applyMixins from './apply-mixins';
 import triggerCallback from './mixins/trigger-callback';
 import assignDeep from 'assign-deep';
 import domify from 'domify';
-import queryString from 'query-string';
 import _isNil from 'lodash.isnil';
 import _isString from 'lodash.isstring';
 import _bindAll from 'lodash.bindall';
@@ -121,6 +120,8 @@ class FetchPjax {
 			return;
 		}
 
+		// Check we hit "Enter" on a matching target element
+		// else it just fires for everything!
 		const target = this.checkMatchingTarget(e);
 
 		if (target) {
