@@ -80,7 +80,8 @@ class FetchPjax {
 			this.updateHistoryState(
 				document.location.href,
 				document.documentElement.innerHTML,
-				true
+				true,
+				'replace' // avoids a double initial entry
 			);
 		}
 
@@ -215,10 +216,13 @@ class FetchPjax {
 	handlePopState(e) {
 		this.state = e.state;
 
-		// Bail for empty state
-		if (isNil(this.state)) return;
+		// If no state than trigger a PJAX request for the page
+		if (isNil(this.state)) {
+			return this.doPjax(document.location.href);
+		}
 
 		const { contents, url } = this.state;
+
 		// If we have a cached HTML for this History state then just show that
 		if (
 			this.options.popStateUseContentCache &&
@@ -406,7 +410,7 @@ class FetchPjax {
 		this.triggerCallback('onAfterRender');
 	}
 
-	updateHistoryState(url, html, force = false) {
+	updateHistoryState(url, html, force = false, type = 'push') {
 		if (!force && window.history.state && window.history.state.url == url) {
 			return;
 		}
@@ -416,7 +420,9 @@ class FetchPjax {
 			contents: JSON.stringify(html)
 		};
 
-		window.history.pushState(this.state, null, url);
+		const method = `${type}State`;
+
+		window.history[method](this.state, null, url);
 	}
 }
 
