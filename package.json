@@ -27,7 +27,7 @@
     "dev": "rollup -c -w",
     "start-server": "node server/server.js",
     "start": "my-server -p 3030",
-    "cy:run": "cypress run",
+    "cy:run": "cypress run --browser chrome",
     "cy:open": "cypress open",
     "pretest": "yarn run build",
     "test:dev": "start-server-and-test start-server http://localhost:8080 cy:open",
