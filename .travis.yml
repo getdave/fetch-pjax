@@ -9,5 +9,3 @@ cache:
     - node_modules
 install:
   - yarn
-script:
-  - $(npm bin)/yarn run test
