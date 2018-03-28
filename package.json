@@ -29,7 +29,7 @@
     "start": "my-server -p 3030",
     "cy:run": "cypress run --browser chrome",
     "cy:open": "cypress open",
-    "pretest": "yarn run build",
+    "pretest": "npm run build",
     "test:dev": "start-server-and-test start-server http://localhost:8080 cy:open",
     "test": "start-server-and-test start-server http://localhost:8080 cy:run"
   },

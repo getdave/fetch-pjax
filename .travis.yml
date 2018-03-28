@@ -8,4 +8,6 @@ cache:
     - ~/.npm
     - node_modules
 install:
-  - yarn
+  - npm install
+script:
+  - $(npm bin)/cypress run --record
