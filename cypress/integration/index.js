@@ -766,24 +766,21 @@ describe('Popstate handling', () => {
         });
     });
 
-    it.only(
-        'should not track the initial page load into history state when trackInitialState is false',
-        () => {
-            cy.window().then(win => {
-                const FetchPjax = win.FetchPjax;
+    it('should not track the initial page load into history state when trackInitialState is false', () => {
+        cy.window().then(win => {
+            const FetchPjax = win.FetchPjax;
 
-                const spy = cy
-                    .spy(FetchPjax.prototype, 'updateHistoryState')
-                    .as('spyUpdateHistoryState');
+            const spy = cy
+                .spy(FetchPjax.prototype, 'updateHistoryState')
+                .as('spyUpdateHistoryState');
 
-                const subject = fetchPjaxFactory(win, {
-                    trackInitialState: false
-                });
-
-                cy.get('@spyUpdateHistoryState').should('not.be.called');
-
-                expect(win.history.state).not.to.exist;
+            const subject = fetchPjaxFactory(win, {
+                trackInitialState: false
             });
-        }
-    );
+
+            cy.get('@spyUpdateHistoryState').should('not.be.called');
+
+            expect(win.history.state).not.to.exist;
+        });
+    });
 });

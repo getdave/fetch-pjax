@@ -106,13 +106,11 @@ class FetchPjax {
 	checkMatchingTarget(e) {
 		let target = e.target;
 
-		if (!target.matches(this.options['selector'])) {
-			target = target.closest(this.options['selector']);
-		}
-
-		if (target && target.matches(this.options['selector'])) {
+		if (target && target.matches(this.options.selector)) {
 			return target;
 		}
+
+		return (target = target.closest(this.options.selector));
 	}
 
 	handleKeyPress(e) {
