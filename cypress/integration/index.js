@@ -746,4 +746,44 @@ describe('Popstate handling', () => {
             cy.get('@spyRender').should('be.called');
         });
     });
+
+    it('should track the initial page load into history state by default', () => {
+        cy.window().then(win => {
+            const FetchPjax = win.FetchPjax;
+
+            const spy = cy
+                .spy(FetchPjax.prototype, 'updateHistoryState')
+                .as('spyUpdateHistoryState');
+
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('@spyUpdateHistoryState').should('be.called');
+
+            expect(win.history.state.url).to.eq('http://localhost:8080/');
+            expect(win.history.state.contents).to.include(
+                '<title>Index Page</title>'
+            );
+        });
+    });
+
+    it.only(
+        'should not track the initial page load into history state when trackInitialState is false',
+        () => {
+            cy.window().then(win => {
+                const FetchPjax = win.FetchPjax;
+
+                const spy = cy
+                    .spy(FetchPjax.prototype, 'updateHistoryState')
+                    .as('spyUpdateHistoryState');
+
+                const subject = fetchPjaxFactory(win, {
+                    trackInitialState: false
+                });
+
+                cy.get('@spyUpdateHistoryState').should('not.be.called');
+
+                expect(win.history.state).not.to.exist;
+            });
+        }
+    );
 });
