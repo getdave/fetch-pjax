@@ -9,7 +9,7 @@ import curry from 'lodash.curry';
 
 class FetchPjax {
 	constructor(options) {
-		this.options = this.setOptions(options);
+		this.options = this.getDefaults(options);
 
 		this.targets = {};
 
@@ -39,7 +39,7 @@ class FetchPjax {
 		}
 	}
 
-	setOptions(options) {
+	getDefaults(options) {
 		const defaults = {
 			autoInit: true,
 			eventType: 'click',
@@ -56,7 +56,7 @@ class FetchPjax {
 			},
 			popStateUseContentCache: true,
 			trackInitialState: true,
-			beforeSend: false,
+			modifyFetchOptions: false,
 			callbacks: {
 				onBeforePjax: false,
 				onSuccessPjax: false,
@@ -236,7 +236,10 @@ class FetchPjax {
 			// happened as per UX best practise
 			setTimeout(() => {
 				this.render(JSON.parse(contents));
-				this.triggerCallback('onSuccessPjax');
+				this.triggerCallback('onSuccessPjax', {
+					url,
+					html: contents
+				});
 				this.triggerCallback('onCompletePjax');
 			}, this.options.popStateFauxLoadTime);
 		} else if (!isNil(url)) {
@@ -298,6 +301,12 @@ class FetchPjax {
 	}
 
 	handlePjaxError(error) {
+		if (isString(error)) {
+			error = {
+				status: 'fail',
+				statusText: error
+			};
+		}
 		// Reset Pjax state
 		this.isPjaxing = false;
 
@@ -327,7 +336,7 @@ class FetchPjax {
 		// FormData. Then once the main merge has completed re-overide the body option
 		// with the cloned FormData. This is required because assignDeep will not correctly
 		// handle non basic objects so FormData gets lost in the "assign" operation
-		const beforeSendOption = this.options.beforeSend;
+		const beforeSendOption = this.options.modifyFetchOptions;
 
 		// Allow overide of Request options via function
 		const overides = typeof beforeSendOption === 'function'
@@ -401,6 +410,7 @@ class FetchPjax {
 			}
 
 			this.triggerCallback('onAfterTargetRender', {
+				targetKey,
 				targetEl,
 				contentEl,
 				renderer

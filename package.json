@@ -26,7 +26,6 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "start-server": "node server/server.js",
-    "start": "my-server -p 3030",
     "cy:run": "cypress run --browser chrome",
     "cy:open": "cypress open",
     "pretest": "npm run build",

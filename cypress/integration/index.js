@@ -385,7 +385,7 @@ describe('Callbacks', function() {
 
     it('should trigger onBeforePjax before PJAX request', function() {
         cy.window().then(win => {
-            fetchPjaxFactory(win, {
+            const subject = fetchPjaxFactory(win, {
                 callbacks: {
                     onBeforePjax: cbStubFunc
                 }
@@ -620,7 +620,7 @@ describe('Overiding fetch options', () => {
                         'X-SOME-HEADER': true // the base
                     }
                 },
-                beforeSend: fetchOptions => {
+                modifyFetchOptions: fetchOptions => {
                     // Set different fetchOptions for different urls
                     if (fetchOptions.url.includes('page1')) {
                         return {

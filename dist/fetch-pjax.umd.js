@@ -3288,7 +3288,7 @@
 
 	class FetchPjax {
 		constructor(options) {
-			this.options = this.setOptions(options);
+			this.options = this.getDefaults(options);
 
 			this.targets = {};
 
@@ -3318,7 +3318,7 @@
 			}
 		}
 
-		setOptions(options) {
+		getDefaults(options) {
 			const defaults = {
 				autoInit: true,
 				eventType: 'click',
@@ -3335,7 +3335,7 @@
 				},
 				popStateUseContentCache: true,
 				trackInitialState: true,
-				beforeSend: false,
+				modifyFetchOptions: false,
 				callbacks: {
 					onBeforePjax: false,
 					onSuccessPjax: false,
@@ -3359,7 +3359,8 @@
 				this.updateHistoryState(
 					document.location.href,
 					document.documentElement.innerHTML,
-					true
+					true,
+					'replace' // avoids a double initial entry
 				);
 			}
 
@@ -3494,10 +3495,13 @@
 		handlePopState(e) {
 			this.state = e.state;
 
-			// Bail for empty state
-			if (lodash_isnil(this.state)) return;
+			// If no state than trigger a PJAX request for the page
+			if (lodash_isnil(this.state)) {
+				return this.doPjax(document.location.href);
+			}
 
 			const { contents, url } = this.state;
+
 			// If we have a cached HTML for this History state then just show that
 			if (
 				this.options.popStateUseContentCache &&
@@ -3511,7 +3515,10 @@
 				// happened as per UX best practise
 				setTimeout(() => {
 					this.render(JSON.parse(contents));
-					this.triggerCallback('onSuccessPjax');
+					this.triggerCallback('onSuccessPjax', {
+						url,
+						html: contents
+					});
 					this.triggerCallback('onCompletePjax');
 				}, this.options.popStateFauxLoadTime);
 			} else if (!lodash_isnil(url)) {
@@ -3573,6 +3580,12 @@
 		}
 
 		handlePjaxError(error) {
+			if (lodash_isstring(error)) {
+				error = {
+					status: 'fail',
+					statusText: error
+				};
+			}
 			// Reset Pjax state
 			this.isPjaxing = false;
 
@@ -3602,7 +3615,7 @@
 			// FormData. Then once the main merge has completed re-overide the body option
 			// with the cloned FormData. This is required because assignDeep will not correctly
 			// handle non basic objects so FormData gets lost in the "assign" operation
-			const beforeSendOption = this.options.beforeSend;
+			const beforeSendOption = this.options.modifyFetchOptions;
 
 			// Allow overide of Request options via function
 			const overides = typeof beforeSendOption === 'function'
@@ -3676,6 +3689,7 @@
 				}
 
 				this.triggerCallback('onAfterTargetRender', {
+					targetKey,
 					targetEl,
 					contentEl,
 					renderer
@@ -3685,7 +3699,7 @@
 			this.triggerCallback('onAfterRender');
 		}
 
-		updateHistoryState(url, html, force = false) {
+		updateHistoryState(url, html, force = false, type = 'push') {
 			if (!force && window.history.state && window.history.state.url == url) {
 				return;
 			}
@@ -3695,7 +3709,9 @@
 				contents: JSON.stringify(html)
 			};
 
-			window.history.pushState(this.state, null, url);
+			const method = `${type}State`;
+
+			window.history[method](this.state, null, url);
 		}
 	}
 
