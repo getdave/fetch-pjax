@@ -2,10 +2,10 @@ import applyMixins from './apply-mixins';
 import triggerCallback from './mixins/trigger-callback';
 import assignDeep from 'assign-deep';
 import domify from 'domify';
-import _isNil from 'lodash.isnil';
-import _isString from 'lodash.isstring';
-import _bindAll from 'lodash.bindall';
-import _curry from 'lodash.curry';
+import isNil from 'lodash.isnil';
+import isString from 'lodash.isstring';
+import bindAll from 'lodash.bindall';
+import curry from 'lodash.curry';
 
 class FetchPjax {
 	constructor(options) {
@@ -20,7 +20,7 @@ class FetchPjax {
 		this.isPjaxing = false;
 
 		// Bind all the callbacks
-		_bindAll(this, [
+		bindAll(this, [
 			'handlePjaxSuccess',
 			'handlePjaxError',
 			'handlePopState',
@@ -32,7 +32,7 @@ class FetchPjax {
 
 		// Requires two args but for Promise chaining it's
 		// easier to curry/partially apply
-		this.handlePjaxSuccess = _curry(this.handlePjaxSuccess, 2);
+		this.handlePjaxSuccess = curry(this.handlePjaxSuccess, 2);
 
 		if (this.options.autoInit) {
 			this.init();
@@ -132,7 +132,7 @@ class FetchPjax {
 	handleFormSubmit(e) {
 		let target = e.target;
 
-		if (_isNil(target)) {
+		if (isNil(target)) {
 			return;
 		}
 		// Grab all the valid inputs
@@ -216,15 +216,15 @@ class FetchPjax {
 		this.state = e.state;
 
 		// Bail for empty state
-		if (_isNil(this.state)) return;
+		if (isNil(this.state)) return;
 
 		const { contents, url } = this.state;
 		// If we have a cached HTML for this History state then just show that
 		if (
 			this.options.popStateUseContentCache &&
-			!_isNil(contents) &&
+			!isNil(contents) &&
 			contents.length &&
-			_isString(contents)
+			isString(contents)
 		) {
 			this.triggerCallback('onBeforePjax');
 
@@ -235,7 +235,7 @@ class FetchPjax {
 				this.triggerCallback('onSuccessPjax');
 				this.triggerCallback('onCompletePjax');
 			}, this.options.popStateFauxLoadTime);
-		} else if (!_isNil(url)) {
+		} else if (!isNil(url)) {
 			// Otherwise fetch the content via PJAX
 			this.doPjax(this.state.url, false);
 		}
@@ -353,7 +353,7 @@ class FetchPjax {
 	}
 
 	render(html) {
-		if (_isNil(html) || !_isString(html)) return;
+		if (isNil(html) || !isString(html)) return;
 
 		// Reliably parse the PJAX'd HTML string into a document fragment
 		const dom = domify(html);
@@ -367,14 +367,14 @@ class FetchPjax {
 			const contentEl = dom.querySelector(targetConfig.selector);
 			const renderer = targetConfig.renderer;
 
-			if (_isNil(targetEl)) {
+			if (isNil(targetEl)) {
 				console.log(
 					`targetEl ${targetConfig.target} is unavailable in renderer "${targetKey}"`
 				);
 				return;
 			}
 
-			if (_isNil(contentEl)) {
+			if (isNil(contentEl)) {
 				console.log(
 					`contentEl ${targetConfig.selector} is unavailable in renderer "${targetKey}"`
 				);
