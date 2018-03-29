@@ -3582,8 +3582,7 @@
 		handlePjaxError(error) {
 			if (lodash_isstring(error)) {
 				error = {
-					status: 'fail',
-					statusText: error
+					msg: error
 				};
 			}
 			// Reset Pjax state
@@ -3595,16 +3594,18 @@
 
 		handleFetchNonSuccess(response) {
 			if (!response.ok) {
-				return Promise.reject(
-					Object.assign(
-						{},
-						{
-							status: response.status,
-							statusText: response.statusText
-						},
-						response
-					)
+				const context = Object.assign(
+					{},
+					{
+						status: response.status,
+						statusText: response.statusText
+					}
 				);
+
+				return Promise.reject({
+					msg: response.statusText,
+					context
+				});
 			}
 
 			return response;
@@ -3630,16 +3631,17 @@
 				if (text && text.length) {
 					return Promise.resolve(text);
 				} else {
-					return Promise.reject(
-						Object.assign(
-							{},
-							{
-								status: response.status,
-								statusText: response.statusText
-							},
-							text
-						)
+					const context = Object.assign(
+						{},
+						{
+							status: response.status,
+							statusText: response.statusText
+						}
 					);
+					return Promise.reject({
+						msg: response.statusText,
+						context
+					});
 				}
 			});
 		}

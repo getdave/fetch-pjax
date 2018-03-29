@@ -474,7 +474,9 @@ describe('Callbacks', function() {
                 cy.get('[data-cy-link]').click().then(() => {
                     expect(errorStubFunc).to.be.calledOnce;
 
-                    expect(errorStubFunc.args[0][1]).to.include(errorMsg);
+                    expect(errorStubFunc.args[0][1]).to.include({
+                        msg: errorMsg
+                    });
                 });
 
                 // Complete should be called on happy and error paths
@@ -485,11 +487,19 @@ describe('Callbacks', function() {
             });
         });
 
-        it('should trigger onErrorPjax and onCompletePjax when fetch response status is no "ok"', function() {
+        it('should trigger onErrorPjax and onCompletePjax when fetch response has a non "ok" status', function() {
             const errorResponse = {
                 ok: false,
-                status: 'Not good',
+                status: 401,
                 statusText: 'Some bad things happened'
+            };
+
+            const expected = {
+                msg: 'Some bad things happened',
+                context: {
+                    status: 401,
+                    statusText: 'Some bad things happened'
+                }
             };
 
             cy.window().then(win => {
@@ -508,7 +518,7 @@ describe('Callbacks', function() {
                 cy.get('[data-cy-link]').click().then(() => {
                     expect(errorStubFunc).to.be.calledOnce;
 
-                    expect(errorStubFunc.args[0][1]).to.include(errorResponse);
+                    expect(errorStubFunc.args[0][1]).to.deep.equal(expected);
                 });
 
                 // Complete should be called on happy and error paths
