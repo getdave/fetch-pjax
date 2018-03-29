@@ -1,11 +1,48 @@
-import applyMixins from './apply-mixins';
-import triggerCallback from './mixins/trigger-callback';
-import assignDeep from 'assign-deep';
-import domify from 'domify';
-import isNil from 'lodash.isnil';
-import isString from 'lodash.isstring';
-import bindAll from 'lodash.bindall';
-import curry from 'lodash.curry';
+'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var assignDeep = _interopDefault(require('assign-deep'));
+var domify = _interopDefault(require('domify'));
+var isNil = _interopDefault(require('lodash.isnil'));
+var isString = _interopDefault(require('lodash.isstring'));
+var bindAll = _interopDefault(require('lodash.bindall'));
+var curry = _interopDefault(require('lodash.curry'));
+
+/**
+ * APPLY MIXINS
+ * accepts a target constructor and extends it's delegate prototype
+ * with one or more mixin objects. This follows the best practice of
+ * preferring object composition over class hierarchies
+ */
+function applyMixins(target, ...mixins) {
+	mixins.reduce(function(acc, mixin) {
+		return Object.assign(acc, mixin);
+	}, target.prototype);
+
+	return target;
+}
+
+/**
+ * TRIGGER CALLBACK
+ *
+ * provides ability to trigger a named callback function which is passed in as a "setting"
+ */
+
+const TriggerCallback = {
+	triggerCallback(eventName, data = {}) {
+		if (this.options.callbacks === undefined) {
+			return;
+		}
+
+		if (
+			this.options.callbacks[eventName] !== undefined &&
+			typeof this.options.callbacks[eventName] === 'function'
+		) {
+			this.options.callbacks[eventName](this, data);
+		}
+	}
+};
 
 class FetchPjax {
 	constructor(options) {
@@ -439,6 +476,6 @@ class FetchPjax {
 }
 
 // Apply Mixins
-applyMixins(FetchPjax, triggerCallback);
+applyMixins(FetchPjax, TriggerCallback);
 
-export default FetchPjax;
+module.exports = FetchPjax;

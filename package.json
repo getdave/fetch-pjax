@@ -1,32 +1,46 @@
 {
-  "name": "rollup-starter-lib",
+  "name": "fetch-pjax",
   "version": "1.0.0",
   "main": "dist/fetch-pjax.cjs.js",
   "module": "dist/fetch-pjax.esm.js",
   "browser": "dist/fetch-pjax.umd.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/getdave/fetch-pjax.git"
+  },
+  "keywords": ["fetch","pjax","ajax","javascript","js"],
+  "author": "Dave Smith <hello@aheadcreative.co.uk> (https://aheadcreative.co.uk)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ashleygwilliams/my_package/issues"
+  },
   "dependencies": {
     "assign-deep": "^0.4.7",
     "domify": "^1.4.0",
+    "lodash.bindall": "^4.4.0",
+    "lodash.curry": "^4.1.1",
     "lodash.isnil": "^4.0.0",
-    "lodash.isstring": "^4.0.1",
-    "ms": "^2.0.0",
-    "npm-run-all": "^4.1.2",
-    "query-string": "^6.0.0",
-    "rollup-plugin-copy": "^0.2.3"
+    "lodash.isstring": "^4.0.1"
   },
   "devDependencies": {
     "connect": "^3.6.6",
     "cypress": "^2.0.4",
     "rollup": "^0.57.0",
     "rollup-plugin-commonjs": "^9.1.0",
+    "rollup-plugin-copy": "^0.2.3",
     "rollup-plugin-node-resolve": "^3.3.0",
-    "serve-static": "^1.13.2"
+    "serve-static": "^1.13.2",
+    "start-server-and-test": "^1.1.0"
   },
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "cypress open",
-    "server": "node server/server.js"
+    "start-server": "node server/server.js",
+    "cy:run": "cypress run --browser chrome",
+    "cy:open": "cypress open",
+    "pretest": "npm run build",
+    "test:dev": "start-server-and-test start-server http://localhost:8080 cy:open",
+    "test": "start-server-and-test start-server http://localhost:8080 cy:run"
   },
   "files": [
     "dist"

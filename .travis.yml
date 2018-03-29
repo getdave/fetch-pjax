@@ -3,3 +3,11 @@ node_js:
   - '9'
   - '8'
   - '6'
+cache:
+  directories:
+    - ~/.npm
+    - node_modules
+install:
+  - npm install
+script:
+  - $(npm bin)/cypress run --record

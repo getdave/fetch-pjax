@@ -34,7 +34,14 @@ export default [
 	// `file` and `format` for each target)
 	{
 		input: 'src/fetch-pjax.js',
-		external: ['ms'],
+		external: [
+			'assign-deep',
+			'domify',
+			'lodash.bindall',
+			'lodash.curry',
+			'lodash.isnil',
+			'lodash.isstring'
+		],
 		output: [
 			{ file: pkg.main, format: 'cjs' },
 			{ file: pkg.module, format: 'es' }
