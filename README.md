@@ -230,9 +230,9 @@ This project uses Gitflow. All pull requests should be branched from the `develo
 
 1. Fork it 
 2. Checkout the `develop` branch
-3. Create your feature branch (`git checkout -b feature/fooBar`)
-4. Commit your changes (`git commit -am 'Add some fooBar'`)
-5. Push to the branch (`git push origin feature/fooBar`)
+3. Create your feature branch (`git checkout -b feature/myfeature`)
+4. Commit your changes (`git commit -am 'Add some myfeature'`)
+5. Push to the branch (`git push origin feature/myfeature`)
 6. Create a new Pull Request
 
 <!-- Markdown link & img dfn's -->

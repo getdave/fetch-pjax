@@ -4,6 +4,16 @@
   "main": "dist/fetch-pjax.cjs.js",
   "module": "dist/fetch-pjax.esm.js",
   "browser": "dist/fetch-pjax.umd.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/getdave/fetch-pjax.git"
+  },
+  "keywords": ["fetch","pjax","ajax","javascript","js"],
+  "author": "Dave Smith <hello@aheadcreative.co.uk> (https://aheadcreative.co.uk)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ashleygwilliams/my_package/issues"
+  },
   "dependencies": {
     "assign-deep": "^0.4.7",
     "domify": "^1.4.0",
