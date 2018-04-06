@@ -3292,11 +3292,11 @@
 
 			this.targets = {};
 
-			this.state = {};
-
 			this.initpop = false;
 
 			this.isPjaxing = false;
+
+			this.currentPathname = '';
 
 			// Bind all the callbacks
 			lodash_bindall(this, [
@@ -3311,7 +3311,7 @@
 
 			// Requires two args but for Promise chaining it's
 			// easier to curry/partially apply
-			this.handlePjaxSuccess = lodash_curry(this.handlePjaxSuccess, 2);
+			this.handlePjaxSuccess = lodash_curry(this.handlePjaxSuccess, 4);
 
 			if (this.options.autoInit) {
 				this.init();
@@ -3364,7 +3364,13 @@
 				);
 			}
 
+			this.updateCurrentPathname();
+
 			this.addListeners();
+		}
+
+		updateCurrentPathname() {
+			this.currentPathname = document.location.pathname;
 		}
 
 		addListeners() {
@@ -3474,14 +3480,20 @@
 
 			if (element.getAttribute('target') === '_blank') return;
 
+			if (element.hash && element.pathname === window.location.pathname)
+				return true;
+
 			const href = element.href; // avoid the literal href attr as this may be a relative path as a string which cannot be parsed by new URL
 
 			if (!href) {
 				return;
 			}
 
-			// Allow cross origin links to behave as normal
-			if (new URL(href).hostname !== location.hostname) {
+			// Ignore cross origin links and allow to behave as normal
+			if (
+				location.protocol !== element.protocol ||
+				location.hostname !== element.hostname
+			) {
 				return;
 			}
 
@@ -3492,15 +3504,22 @@
 			e.preventDefault();
 		}
 
-		handlePopState(e) {
-			this.state = e.state;
+		stripHash(url) {
+			return url.replace(/#.*/, '');
+		}
 
-			// If no state than trigger a PJAX request for the page
-			if (lodash_isnil(this.state)) {
-				return this.doPjax(document.location.href);
+		handlePopState(e) {
+			const historyState = e.state;
+
+			// On same path so could be hashchange so ignore
+			if (this.currentPathname === location.pathname) return;
+
+			// Re-request page content but don't add a new History entry as one already exists
+			if (lodash_isnil(historyState)) {
+				return this.doPjax(document.location.href, false);
 			}
 
-			const { contents, url } = this.state;
+			const { contents, url } = historyState;
 
 			// If we have a cached HTML for this History state then just show that
 			if (
@@ -3515,6 +3534,13 @@
 				// happened as per UX best practise
 				setTimeout(() => {
 					this.render(JSON.parse(contents));
+
+					const hash = this.parseHash(url);
+
+					if (!lodash_isnil(hash) && hash.length) {
+						this.scrollToTarget(hash);
+					}
+
 					this.triggerCallback('onSuccessPjax', {
 						url,
 						html: contents
@@ -3523,7 +3549,7 @@
 				}, this.options.popStateFauxLoadTime);
 			} else if (!lodash_isnil(url)) {
 				// Otherwise fetch the content via PJAX
-				this.doPjax(this.state.url, false);
+				this.doPjax(historyState.url, false);
 			}
 		}
 
@@ -3531,6 +3557,16 @@
 			const fetchOptions = this.options.fetchOptions;
 			fetchOptions.url = url;
 			return this.beforeSend(fetchOptions);
+		}
+
+		parseHash(url) {
+			return this.parseURL(url).hash;
+		}
+
+		parseURL(url) {
+			const a = document.createElement('a');
+			a.href = url;
+			return a;
 		}
 
 		doPjax(url, shouldUpdateState = true) {
@@ -3542,14 +3578,21 @@
 			// Set state as Pjaxing to block
 			this.isPjaxing = true;
 
-			const fetchOptions = this.buildFetchOptions(url);
+			// Is there a hash? Save a reference
+			const hash = url.includes('#') ? this.parseHash(url) : '';
+
+			const fetchOptions = this.buildFetchOptions(this.stripHash(url));
 
 			this.triggerCallback('onBeforePjax', {
 				fetchOptions
 			});
 
 			// Curried - allows us provide the url arg upfront
-			const handlePjaxSuccess = this.handlePjaxSuccess(url);
+			const handlePjaxSuccess = this.handlePjaxSuccess(
+				url,
+				hash,
+				shouldUpdateState
+			);
 
 			// fetchOptions.headers = new Headers(fetchOptions.headers);
 			fetch(fetchOptions.url, fetchOptions)
@@ -3563,13 +3606,30 @@
 				.catch(this.handlePjaxError);
 		}
 
-		handlePjaxSuccess(url, html) {
-			this.updateHistoryState(url, html);
+		scrollToTarget(hash) {
+			const hashScrollTarget = document.querySelector(hash);
+
+			if (hashScrollTarget) {
+				hashScrollTarget.scrollIntoView();
+			}
+		}
+
+		handlePjaxSuccess(url, hash, shouldUpdateState, html) {
+			if (shouldUpdateState) {
+				this.updateHistoryState(url, html);
+			}
+
+			this.updateCurrentPathname();
 
 			try {
 				this.render(html);
 			} catch (e) {
 				throw new Error(`Unable to render page at ${url}: ${e}`);
+			}
+
+			// Attempt to scroll to hash target if it exists
+			if (!lodash_isnil(hash) && hash.length) {
+				this.scrollToTarget(hash);
 			}
 
 			this.triggerCallback('onSuccessPjax', {
@@ -3702,18 +3762,14 @@
 		}
 
 		updateHistoryState(url, html, force = false, type = 'push') {
-			if (!force && window.history.state && window.history.state.url == url) {
-				return;
-			}
-
-			this.state = {
+			const newState = {
 				url: url,
 				contents: JSON.stringify(html)
 			};
 
 			const method = `${type}State`;
 
-			window.history[method](this.state, null, url);
+			window.history[method](newState, null, url);
 		}
 	}
 
