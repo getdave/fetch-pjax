@@ -140,6 +140,17 @@ class FetchPjax {
 		}
 	}
 
+	buildQueryStringFromFormData(formData) {
+		let query = '';
+
+		for (let pair of formData.entries()) {
+			query += `&${pair[0]}=${pair[1]}`;
+		}
+
+		// Trim of the first (unwanted) ampersand
+		return query.substring(1);
+	}
+
 	handleFormSubmit(e) {
 		let target = e.target;
 
@@ -152,16 +163,9 @@ class FetchPjax {
 		// Grab all the valid inputs
 		const formData = new FormData(target);
 
-		let query = '';
+		const query = this.buildQueryStringFromFormData(formData);
 
-		for (let pair of formData.entries()) {
-			query += `&${pair[0]}=${pair[1]}`;
-		}
-
-		// Trim of the first (unwanted) ampersand
-		query = query.substring(1);
-
-		if (query === undefined) {
+		if (isNil(query)) {
 			return;
 		}
 
