@@ -43,7 +43,9 @@
 		<script src="fetch-pjax.js"></script>
 
 		<script>
-			new FetchPjax();
+			new FetchPjax({
+				formSelector: '.special-form'
+			});
 		</script>
 	</body>
 </html>

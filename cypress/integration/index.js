@@ -282,7 +282,10 @@ describe('Navigation Event Types', function() {
     });
 });
 
-describe('Handling Forms', function() {
+describe.only('Handling Forms', function() {
+    const firstName = 'Jon';
+    const lastName = 'Doe';
+
     beforeEach(() => {
         cy.visit('/', {
             onBeforeLoad(win) {
@@ -291,28 +294,70 @@ describe('Handling Forms', function() {
         });
     });
 
-    it('should handle form submits', function() {
+    it('should handle all form submits by default', function() {
         cy.window().then(win => {
-            const firstName = 'Jon';
-            const lastName = 'Doe';
-
             const expectedUrl = `http://localhost:8080/page1.html`;
 
-            const expectedQs = `?firstname=${firstName}lastname=${lastName}`;
+            const expectedQueryString = `?firstname=${firstName}&lastname=${lastName}`;
 
             const subject = fetchPjaxFactory(win);
 
             cy.spyOnFetchPjax(subject, 'doPjax');
 
+            cy.get('[data-cy-form]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+
+                cy.root().submit();
+            });
+
+            cy
+                .get('@spyDoPjax')
+                .should('be.calledWith', expectedUrl + expectedQueryString);
+
+            cy.assetPjaxNavigationTo(page1Url + expectedQueryString);
+        });
+    });
+
+    it('should not handle form submits when handleForms option is set to false', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win, {
+                handleForms: false
+            });
+
+            // Note: we spy on handler because expected eventListener not to
+            // even be registered if this option is set
+            cy.spyOnFetchPjax(subject, 'handleFormSubmit');
+
             cy.get('input[name=firstname]').type(firstName);
             cy.get('input[name=lastname]').type(lastName);
             cy.get('[data-cy-form]').trigger('submit');
 
-            cy
-                .get('@spyDoPjax')
-                .should('be.calledWith', expectedUrl + expectedQs);
+            cy.get('@spyHandleFormSubmit').should('not.be.called');
+        });
+    });
 
-            cy.assetPjaxNavigationTo(page1Url + expectedQs);
+    it('should only handle forms matching the given formSelector option', function() {
+        cy.window().then(win => {
+            const formSelector = '.special-form';
+
+            const subject = fetchPjaxFactory(win, {
+                formSelector
+            });
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+
+            // Form lacking the provided formSelector should not be PJAX'd
+            cy.get('input[name=firstname]').type(firstName);
+            cy.get('input[name=lastname]').type(lastName);
+            cy.get(`form:not(${formSelector})`).trigger('submit');
+            cy.get('@spyDoPjax').should('not.be.called'); // assert
+
+            // Form with the provided formSelector _should_ be PJAX'd
+            cy.get('input[name=firstname-sf]').type(firstName);
+            cy.get('input[name=lastname-sf]').type(lastName);
+            cy.get(`form${formSelector}`).trigger('submit');
+            cy.get('@spyDoPjax').should('be.called'); // assert
         });
     });
 });

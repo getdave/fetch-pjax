@@ -77,6 +77,8 @@ class FetchPjax {
 			autoInit: true,
 			eventType: 'click',
 			selector: 'a',
+			formSelector: 'form',
+			handleForms: true,
 			targets: {
 				content: 'main',
 				title: 'title'
@@ -137,7 +139,9 @@ class FetchPjax {
 
 		document.addEventListener('keydown', this.handleKeyPress);
 
-		document.addEventListener('submit', this.handleFormSubmit);
+		if (this.options.handleForms) {
+			document.addEventListener('submit', this.handleFormSubmit);
+		}
 
 		window.addEventListener('popstate', e => this.handlePopState(e));
 	}
@@ -175,14 +179,20 @@ class FetchPjax {
 		if (isNil(target)) {
 			return;
 		}
+
+		if (!target.matches(this.options.formSelector)) return;
+
 		// Grab all the valid inputs
 		const formData = new FormData(target);
 
 		let query = '';
 
 		for (let pair of formData.entries()) {
-			query += pair[0] + '=' + pair[1];
+			query += `&${pair[0]}=${pair[1]}`;
 		}
+
+		// Trim of the first (unwanted) ampersand
+		query = query.substring(1);
 
 		if (query === undefined) {
 			return;
