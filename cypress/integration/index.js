@@ -794,3 +794,73 @@ describe('Popstate handling', () => {
         });
     });
 });
+
+describe('Internal "hash" link handling', () => {
+    beforeEach(() => {
+        cy.visit('/', {
+            onBeforeLoad(win) {
+                cy.spy(win, 'fetch').as('windowFetch');
+            }
+        });
+    });
+
+    it('should handle internal links', () => {
+        cy.window().then(win => {
+            fetchPjaxFactory(win);
+
+            cy.get('[data-cy-internal]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.get('[data-cy-internal-two]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor-two');
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/');
+        });
+    });
+
+    it('should scroll to a matching target when returning to a history entry whose url contains a hash', function() {
+        cy.window().then(win => {
+            fetchPjaxFactory(win);
+
+            cy.get('[data-cy-internal]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.get('[data-cy-link]').click({
+                force: true
+            });
+
+            cy.assetPjaxNavigationTo(page1Url);
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            // Has the target represented by the hash value in the url
+            // been scroll to (ie: is it within the current viewport?)
+            cy.get('#internal-anchor').should($el => {
+                const elementTop = $el.offset().top;
+                const elementBottom = elementTop + $el.outerHeight();
+                const viewportTop = $(win).scrollTop();
+                const viewportBottom = viewportTop + $(win).height();
+                const inViewPort =
+                    elementBottom > viewportTop && elementTop < viewportBottom;
+
+                expect(inViewPort, 'The target was not within the viewport').to
+                    .be.true;
+            });
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/');
+        });
+    });
+});
