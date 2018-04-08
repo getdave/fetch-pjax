@@ -5,17 +5,46 @@ Fetch Pjax uses AJAX (via the `fetch` API) to deliver a __super fast browsing ex
 
 Fetch Pjax __provides full url, back button and history support__ via liberal usage of `history.pushState` and the `window.onpopstate` event. 
 
+## Features
+
+* URL updating and management
+* Back button support
+* Choose multiple DOM update targets
+* Form handling (inc. `POST`/`GET` and `enctypes`)
+* Highly configurable - customise behaviour via [options](#options)
+* Extensible by design - use [callbacks](#callbacks) to achieve your unique requirements
+* Full ability to customise Fetch request details 
+* Test coverage for all key features
+
 ## Installation
 
+#### via npm/yarn
 ```sh
+// npm users
 npm install fetch-pjax --save
-```
 
-or
-
-```sh
+// yarn users
 yarn add fetch-pjax
 ```
+
+then... 
+
+```javascript
+import FetchPjax from 'fetch-pjax' 
+
+const FetchPjax = require('fetch-pjax');
+```
+
+
+#### via good old script tag
+
+```
+<script src="dist/fetch-pjax.umd.js" />
+
+// FetchPjax is now available on global namespace
+```
+
+
 
 ### Requirements / Assumptions
 
@@ -36,7 +65,9 @@ The basic usage signature of a `FetchPjax` is:
 
 For many users, creating an instance of `FetchPjax` will be enough to get PJAX working on your site.
 
-```
+The example below assumes you have [imported/included the `fetch-pjax` library](#installation).
+
+```javascript
 new FetchPjax(); // sensible defaults applied
 ```
 
@@ -49,7 +80,7 @@ By default the sections of the DOM matching the following selectors will be upda
 
 As everyone's site is different, you can easily customise this by providing the `targets` option. For example:
 
-```
+```javascript
 new FetchPjax({
 	targets: { // define which portions of the current page should be replaced
 		title: 'title' 
@@ -66,7 +97,7 @@ Note that when you provide a `targets` option, the defaults are overidden, so yo
 
 As suggested by the name, `FetchPjax` utilises `fetch` under the hood. In some cases you may wish to customise the options provided to the underlying `fetch()` call for each PJAX request. To do this simply provide the `fetchOptions` option. For example:
 
-```
+```javascript
 const token = btoa('someuser:somepassword');
 
 new FetchPjax({
@@ -96,7 +127,7 @@ These options will be set on every PJAX request. If you need to update the optio
 
 Making use of a callback is easy. Simply provide an object as the `callbacks` option. For example: 
 
-```
+```javascript
 new FetchPjax({
 	callbacks: {
 		onBeforePjax: () => {
@@ -148,7 +179,7 @@ Callback | Args    | Description
 
 ### Example Callback usage
 
-```
+```javascript
 new FetchPjax({	
 	callbacks: {
         onBeforePjax: (instance, fetchOptions) => {
@@ -170,7 +201,7 @@ __Problem:__ you need to modify the options passed to `fetch()` on a per request
 __Solution:__ utilise the `modifyFetchOptions` option to conditionally modify the `fetchOptions` based on the request.
 
 __Example:__	
-```
+```javascript
 new FetchPjax({	
 	modifyFetchOptions: (fetchOptions) => {
 

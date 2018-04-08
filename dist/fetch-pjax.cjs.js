@@ -84,6 +84,7 @@ class FetchPjax {
 			eventType: 'click',
 			selector: 'a',
 			formSelector: 'form',
+			ignoreSelector: '[data-fetch-pjax-ignore]',
 			handleForms: true,
 			targets: {
 				content: 'main',
@@ -155,11 +156,13 @@ class FetchPjax {
 	checkMatchingTarget(e) {
 		let target = e.target;
 
+		if (target.matches(this.options.ignoreSelector)) return;
+
 		if (target && target.matches(this.options.selector)) {
 			return target;
 		}
 
-		return (target = target.closest(this.options.selector));
+		return target.closest(this.options.selector);
 	}
 
 	handleKeyPress(e) {

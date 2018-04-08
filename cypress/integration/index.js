@@ -261,6 +261,22 @@ describe('Navigation Event Types', function() {
                 cy.get('@spyDoPjax').should('be.called');
             });
         });
+
+        it('should ignore elements matching ignoreSelector option', function() {
+            cy.window().then(win => {
+                const ignoreSelector = '[data-fetch-pjax-ignore]';
+
+                const subject = fetchPjaxFactory(win, {
+                    ignoreSelector
+                });
+
+                cy.spyOnFetchPjax(subject, 'doPjax');
+
+                cy.get(ignoreSelector).click();
+
+                cy.get('@spyDoPjax').should('not.be.called');
+            });
+        });
     });
 
     describe('Event Types', function() {
