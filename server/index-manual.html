@@ -20,7 +20,7 @@
 
 			<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corrupti molestiae qui ducimus odio officiis praesentium iusto delectus temporibus deleniti animi dolore laboriosam ullam, placeat, minus voluptas ad eum laudantium magnam!</p>
 
-			<form data-cy-form action="/page1.html">
+			<form data-cy-form action="/page1.html" method="post" enctype="multipart/form-data">
 				<label for="firstname">Firstname</label>
 				<input name="firstname" type="text" id="firstname">
 
@@ -43,9 +43,7 @@
 		<script src="fetch-pjax.js"></script>
 
 		<script>
-			new FetchPjax({
-				formSelector: '.special-form'
-			});
+			new FetchPjax();
 		</script>
 	</body>
 </html>

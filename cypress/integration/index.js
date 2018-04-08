@@ -282,14 +282,15 @@ describe('Navigation Event Types', function() {
     });
 });
 
-describe.only('Handling Forms', function() {
+describe('Handling Forms', function() {
+    let winFetchSpy;
     const firstName = 'Jon';
     const lastName = 'Doe';
 
     beforeEach(() => {
         cy.visit('/', {
             onBeforeLoad(win) {
-                cy.spy(win, 'fetch').as('windowFetch');
+                winFetchSpy = cy.spy(win, 'fetch').as('windowFetch');
             }
         });
     });
@@ -329,35 +330,115 @@ describe.only('Handling Forms', function() {
             // even be registered if this option is set
             cy.spyOnFetchPjax(subject, 'handleFormSubmit');
 
-            cy.get('input[name=firstname]').type(firstName);
-            cy.get('input[name=lastname]').type(lastName);
-            cy.get('[data-cy-form]').trigger('submit');
+            cy.get('[data-cy-form]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit();
+            });
 
             cy.get('@spyHandleFormSubmit').should('not.be.called');
         });
     });
 
-    it('should only handle forms matching the given formSelector option', function() {
+    it('should handle forms matching the given formSelector option', function() {
         cy.window().then(win => {
             const formSelector = '.special-form';
 
             const subject = fetchPjaxFactory(win, {
-                formSelector
+                formSelector: formSelector
             });
 
             cy.spyOnFetchPjax(subject, 'doPjax');
 
-            // Form lacking the provided formSelector should not be PJAX'd
-            cy.get('input[name=firstname]').type(firstName);
-            cy.get('input[name=lastname]').type(lastName);
-            cy.get(`form:not(${formSelector})`).trigger('submit');
-            cy.get('@spyDoPjax').should('not.be.called'); // assert
+            cy.get(`form${formSelector}`).within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit();
+                cy.get('@spyDoPjax').should('be.called'); // assert
+            });
+        });
+    });
 
-            // Form with the provided formSelector _should_ be PJAX'd
-            cy.get('input[name=firstname-sf]').type(firstName);
-            cy.get('input[name=lastname-sf]').type(lastName);
-            cy.get(`form${formSelector}`).trigger('submit');
-            cy.get('@spyDoPjax').should('be.called'); // assert
+    it('should not handle forms which do not match the given formSelector option', function() {
+        cy.window().then(win => {
+            const formSelector = '.special-form';
+
+            const subject = fetchPjaxFactory(win, {
+                formSelector: formSelector
+            });
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+
+            cy
+                .get(`form:not(${formSelector})[data-cy-form-get]`)
+                .within($form => {
+                    cy.get('input[name=firstname]').type(firstName);
+                    cy.get('input[name=lastname]').type(lastName);
+
+                    cy.root().submit();
+                    cy.get('@spyDoPjax').should('not.be.called');
+                });
+        });
+    });
+
+    it('should send forms with get method by default', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('[data-cy-form-get]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+
+                    expect(fetchCallArgs).not.to.include({
+                        method: 'POST'
+                    });
+                });
+            });
+        });
+    });
+
+    it('should send forms with the specific method type when present', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('[data-cy-form-post]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+
+                    expect(fetchCallArgs).to.include({
+                        method: 'POST'
+                    });
+                });
+            });
+        });
+    });
+
+    it('should send forms with the specific encoding when present in enctype', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            // Forms with multipart Form Data will be sent with FormData body
+            // rather than URLSearchParams
+            cy.get('[enctype="multipart/form-data"]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+                    let bodyName = Object.getPrototypeOf(fetchCallArgs.body)
+                        .constructor.name;
+
+                    // Unsure why this doens't work but whilst we known it's an instance of FormData
+                    // JavaScript's instanceof returns a false result
+                    expect(
+                        bodyName,
+                        'Body was not an instance of FormData'
+                    ).to.equal('FormData');
+                });
+            });
         });
     });
 });

@@ -3,9 +3,11 @@ import triggerCallback from './mixins/trigger-callback';
 import assignDeep from 'assign-deep';
 import domify from 'domify';
 import isNil from 'lodash.isnil';
+import isEmpty from 'lodash.isempty';
 import isString from 'lodash.isstring';
 import bindAll from 'lodash.bindall';
 import curry from 'lodash.curry';
+import 'url-search-params-polyfill';
 
 class FetchPjax {
 	constructor(options) {
@@ -163,18 +165,46 @@ class FetchPjax {
 		// Grab all the valid inputs
 		const formData = new FormData(target);
 
-		const query = this.buildQueryStringFromFormData(formData);
+		// Determine whether to send as GET or POST
+		if (target.method.toUpperCase() === 'POST') {
+			const encoding = target.encoding.includes('form-data')
+				? 'form-data'
+				: 'urlencoded';
 
-		if (isNil(query)) {
-			return;
+			this.sendFormWithPost(target.action, formData, encoding);
+		} else {
+			this.sendFormWithGet(target.action, formData);
 		}
 
 		// Only cancel event if all the conditionals pass
 		e.preventDefault();
+	}
 
-		const url = `${target.action}?${query}`;
+	/**
+	 * Sends the Form data as a POST request 
+	 * see https://stackoverflow.com/questions/46640024/how-do-i-post-form-data-with-fetch-api
+	 * @param  {string} url      the url to which the form data request should be sent
+	 * @param  {FormData} formData the data from the form being submitted
+	 * @return {void}          
+	 */
+	sendFormWithPost(url, data, type = 'urlencoded') {
+		// For everything other than form-data
+		// transform the FormData object into a query-string
+		// via URLSearchParams (polyfilled)
+		if (type !== 'form-data') {
+			data = new URLSearchParams(data); // polyfilled via https://www.npmjs.com/package/url-search-params-polyfill
+		}
 
-		// Request this
+		this.doPjax(url, true, {
+			method: 'POST',
+			body: data // will be one of FormData or URLSearchParams
+		});
+	}
+
+	sendFormWithGet(url, formData) {
+		const query = this.buildQueryStringFromFormData(formData);
+		if (isNil(query)) return;
+		url = `${url}?${query}`;
 		this.doPjax(url);
 	}
 
@@ -288,10 +318,38 @@ class FetchPjax {
 		}
 	}
 
-	buildFetchOptions(url) {
-		const fetchOptions = this.options.fetchOptions;
-		fetchOptions.url = url;
-		return this.beforeSend(fetchOptions);
+	buildFetchOptions(optionOverides = {}) {
+		let bodyWithNonMergableValues = false;
+
+		let fetchOptions = Object.assign(
+			{},
+			this.options.fetchOptions,
+			optionOverides
+		);
+
+		if (
+			(fetchOptions.body && fetchOptions.body instanceof FormData) ||
+			fetchOptions.body instanceof URLSearchParams
+		) {
+			bodyWithNonMergableValues = fetchOptions.body;
+		}
+
+		fetchOptions = this.beforeSend(fetchOptions);
+
+		// Restore following assign-deep operation but only if user hasn't overidden
+		if (bodyWithNonMergableValues && isEmpty(fetchOptions.body)) {
+			fetchOptions.body = bodyWithNonMergableValues;
+		}
+
+		if (fetchOptions.body && fetchOptions.body instanceof URLSearchParams) {
+			fetchOptions.headers = Object.assign({}, fetchOptions.headers, {
+				'Content-Type':
+					'application/x-www-form-urlencoded; charset=UTF-8'
+			});
+		}
+
+		// See https://www.npmjs.com/package/url-search-params-polyfill#known-issues
+		return fetchOptions;
 	}
 
 	parseHash(url) {
@@ -304,7 +362,7 @@ class FetchPjax {
 		return a;
 	}
 
-	doPjax(url, shouldUpdateState = true) {
+	doPjax(url, shouldUpdateState = true, options = {}) {
 		// If we are already processing a request just ignore
 		// nb: until we have a way to cancel fetch requests
 		// we can't manage this more effectively
@@ -316,7 +374,11 @@ class FetchPjax {
 		// Is there a hash? Save a reference
 		const hash = url.includes('#') ? this.parseHash(url) : '';
 
-		const fetchOptions = this.buildFetchOptions(this.stripHash(url));
+		const optionOverides = Object.assign({}, options, {
+			url: this.stripHash(url)
+		});
+
+		const fetchOptions = this.buildFetchOptions(optionOverides);
 
 		this.triggerCallback('onBeforePjax', {
 			fetchOptions

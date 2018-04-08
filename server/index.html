@@ -22,7 +22,7 @@
 
 			<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corrupti molestiae qui ducimus odio officiis praesentium iusto delectus temporibus deleniti animi dolore laboriosam ullam, placeat, minus voluptas ad eum laudantium magnam!</p>
 
-			<form data-cy-form action="/page1.html">
+			<form data-cy-form data-cy-form-get action="/page1.html">
 				<label for="firstname">Firstname</label>
 				<input name="firstname" type="text" id="firstname">
 
@@ -32,15 +32,29 @@
 				<button type="submit">Submit</button>
 			</form>
 
-			<form data-cy-form-special action="/page1.html" class="special-form">
-				<label for="firstname-sf">Firstname</label>
-				<input name="firstname-sf" type="text" id="firstname-sf">
 
-				<label for="lastname-sf">Lastname</label>
-				<input name="lastname-sf" type="text" id="lastname-sf">
+			<form data-cy-form-special data-cy-form-post action="/page1.html" method="post" class="special-form">
+				<label for="firstname">Firstname</label>
+				<input name="firstname" type="text" id="firstname">
+
+				<label for="lastname">Lastname</label>
+				<input name="lastname" type="text" id="lastname">
 
 				<button type="submit">Submit</button>
 			</form>
+
+			<form data-cy-form-enctype action="/page1.html" method="post" enctype="multipart/form-data">
+				<label for="firstname">Firstname</label>
+				<input name="firstname" type="text" id="firstname">
+
+				<label for="lastname">Lastname</label>
+				<input name="lastname" type="text" id="lastname">
+
+				<button type="submit">Submit</button>
+			</form>
+
+
+			
 
 			<div id="internal-anchor" style="position: relative; top: 1000em">
 				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Doloremque rem tempore est, commodi iure. Numquam ab voluptas consequuntur, consectetur temporibus rem nihil labore itaque eaque ad quia nobis cupiditate adipisci.</p>

@@ -40,7 +40,9 @@ export default [
 			'lodash.bindall',
 			'lodash.curry',
 			'lodash.isnil',
-			'lodash.isstring'
+			'lodash.isempty',
+			'lodash.isstring',
+			'url-search-params-polyfill'
 		],
 		output: [
 			{ file: pkg.main, format: 'cjs' },
