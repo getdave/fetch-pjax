@@ -5,17 +5,47 @@ Fetch Pjax uses AJAX (via the `fetch` API) to deliver a __super fast browsing ex
 
 Fetch Pjax __provides full url, back button and history support__ via liberal usage of `history.pushState` and the `window.onpopstate` event. 
 
+## Features
+
+* URL updating and management
+* Back button support
+* Internal "hash" link support (inc. scroll position restoration)
+* Choose multiple DOM update targets
+* Form handling (inc. `POST`/`GET` and `enctypes`)
+* Highly configurable - customise behaviour via [options](#options)
+* Extensible by design - use [callbacks](#callbacks) to achieve your unique requirements
+* Full ability to customise Fetch request details 
+* Test coverage for all key features
+
 ## Installation
 
+#### via npm/yarn
 ```sh
+// npm users
 npm install fetch-pjax --save
-```
 
-or
-
-```sh
+// yarn users
 yarn add fetch-pjax
 ```
+
+then... 
+
+```javascript
+import FetchPjax from 'fetch-pjax' 
+
+const FetchPjax = require('fetch-pjax');
+```
+
+
+#### via good old script tag
+
+```
+<script src="dist/fetch-pjax.umd.js" />
+
+// FetchPjax is now available on global namespace
+```
+
+
 
 ### Requirements / Assumptions
 
@@ -36,7 +66,9 @@ The basic usage signature of a `FetchPjax` is:
 
 For many users, creating an instance of `FetchPjax` will be enough to get PJAX working on your site.
 
-```
+The example below assumes you have [imported/included the `fetch-pjax` library](#installation).
+
+```javascript
 new FetchPjax(); // sensible defaults applied
 ```
 
@@ -49,7 +81,7 @@ By default the sections of the DOM matching the following selectors will be upda
 
 As everyone's site is different, you can easily customise this by providing the `targets` option. For example:
 
-```
+```javascript
 new FetchPjax({
 	targets: { // define which portions of the current page should be replaced
 		title: 'title' 
@@ -66,7 +98,7 @@ Note that when you provide a `targets` option, the defaults are overidden, so yo
 
 As suggested by the name, `FetchPjax` utilises `fetch` under the hood. In some cases you may wish to customise the options provided to the underlying `fetch()` call for each PJAX request. To do this simply provide the `fetchOptions` option. For example:
 
-```
+```javascript
 const token = btoa('someuser:somepassword');
 
 new FetchPjax({
@@ -96,7 +128,7 @@ These options will be set on every PJAX request. If you need to update the optio
 
 Making use of a callback is easy. Simply provide an object as the `callbacks` option. For example: 
 
-```
+```javascript
 new FetchPjax({
 	callbacks: {
 		onBeforePjax: () => {
@@ -121,6 +153,10 @@ Option | Type | Default | Description
 `autoInit` | `boolean` | `true` | determines whether `FetchPjax` should initialise itself by default when a new instance is created. Useful for situations where you might need to defer execution.
 `eventType` | `string` | `click` | defines the event type on which to listen to trigger a PJAX cycle. For example, specifying `touchstart` would then only trigger PJAX for `touchstart` events.
 `selector` | `string` | `a` | a valid DOM selector for the elements on which you wish to listen for clicks (or other valid `eventType`)
+`ignoreSelector` | `string` | `[data-fetch-pjax-ignore]` | a valid DOM selector for the elements which you wish to _exclude_ from being handled by PJAX.  
+`handleForms` | `boolean` | `true` | determines whether or not FetchPjax should handle Form `submit` events
+`formSelector` | `string` | `form` | a valid DOM selector for any Forms within the document which you wish to be handeled by PJAX (only applied if `handleForms` is truthy)
+
 `targets` | `object` | `{ content: 'main', title: 'title' }` | defines which portions of the page should be replaced by the Ajax'd content on each PJAX request. The object keys _must_ be unique, but are entirely arbitary and can be anything that helps you to identify them. The object values must be a valid DOM selector for an element which _must_ exist within the page DOM at the point of creating a `FetchPjax` instance
 `popStateFauxLoadTime` | `int` | `300` | a period (in milliseconds) to wait before cached content retrieved from the `history.state` is used to update the DOM. This is intended to improve the user experience by simulating a network request delay. Without this content is replaced too quickly to be perceivable. Only utilised when the `popStateUseContentCache` option is set to `true` 
 `fetchOptions` | `object` | `{ headers: { 'X-PJAX': true } }` | sets the options argument sent to the underlying `fetch(url, options={})` call for each PJAX request. Must be a valid options object as provided to the second `init` argument of the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Syntax). To overide on a per-request basis, see [`modifyFetchOptions`](#callbacks)
@@ -148,8 +184,9 @@ Callback | Args    | Description
 
 ### Example Callback usage
 
-```
-new FetchPjax({	
+```javascript
+new FetchPjax({
+	
 	callbacks: {
         onBeforePjax: (instance, fetchOptions) => {
         	// do something here
@@ -170,7 +207,7 @@ __Problem:__ you need to modify the options passed to `fetch()` on a per request
 __Solution:__ utilise the `modifyFetchOptions` option to conditionally modify the `fetchOptions` based on the request.
 
 __Example:__	
-```
+```javascript
 new FetchPjax({	
 	modifyFetchOptions: (fetchOptions) => {
 
@@ -222,6 +259,13 @@ FetchPjax is the brain child of David Smith
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
+## Roadmap
+
+- [x] Ability to designate certain origins as being allowed for cross original requests - currently all cross origins blocked
+- [x] Reduce bundle size (currently too big)
+- [x] Focus management
+- [x] Accessibility testing and improvements (`aria-live`?)
+- [x] Centralise PJAX logic and avoid multiple conditionals and optional handling across various methods
 
 
 ## Contributing

@@ -261,6 +261,22 @@ describe('Navigation Event Types', function() {
                 cy.get('@spyDoPjax').should('be.called');
             });
         });
+
+        it('should ignore elements matching ignoreSelector option', function() {
+            cy.window().then(win => {
+                const ignoreSelector = '[data-fetch-pjax-ignore]';
+
+                const subject = fetchPjaxFactory(win, {
+                    ignoreSelector
+                });
+
+                cy.spyOnFetchPjax(subject, 'doPjax');
+
+                cy.get(ignoreSelector).click();
+
+                cy.get('@spyDoPjax').should('not.be.called');
+            });
+        });
     });
 
     describe('Event Types', function() {
@@ -283,36 +299,162 @@ describe('Navigation Event Types', function() {
 });
 
 describe('Handling Forms', function() {
+    let winFetchSpy;
+    const firstName = 'Jon';
+    const lastName = 'Doe';
+
     beforeEach(() => {
         cy.visit('/', {
             onBeforeLoad(win) {
-                cy.spy(win, 'fetch').as('windowFetch');
+                winFetchSpy = cy.spy(win, 'fetch').as('windowFetch');
             }
         });
     });
 
-    it('should handle form submits', function() {
+    it('should handle all form submits by default', function() {
         cy.window().then(win => {
-            const firstName = 'Jon';
-            const lastName = 'Doe';
-
             const expectedUrl = `http://localhost:8080/page1.html`;
 
-            const expectedQs = `?firstname=${firstName}lastname=${lastName}`;
+            const expectedQueryString = `?firstname=${firstName}&lastname=${lastName}`;
 
             const subject = fetchPjaxFactory(win);
 
             cy.spyOnFetchPjax(subject, 'doPjax');
 
-            cy.get('input[name=firstname]').type(firstName);
-            cy.get('input[name=lastname]').type(lastName);
-            cy.get('[data-cy-form]').trigger('submit');
+            cy.get('[data-cy-form]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+
+                cy.root().submit();
+            });
 
             cy
                 .get('@spyDoPjax')
-                .should('be.calledWith', expectedUrl + expectedQs);
+                .should('be.calledWith', expectedUrl + expectedQueryString);
 
-            cy.assetPjaxNavigationTo(page1Url + expectedQs);
+            cy.assetPjaxNavigationTo(page1Url + expectedQueryString);
+        });
+    });
+
+    it('should not handle form submits when handleForms option is set to false', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win, {
+                handleForms: false
+            });
+
+            // Note: we spy on handler because expected eventListener not to
+            // even be registered if this option is set
+            cy.spyOnFetchPjax(subject, 'handleFormSubmit');
+
+            cy.get('[data-cy-form]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit();
+            });
+
+            cy.get('@spyHandleFormSubmit').should('not.be.called');
+        });
+    });
+
+    it('should handle forms matching the given formSelector option', function() {
+        cy.window().then(win => {
+            const formSelector = '.special-form';
+
+            const subject = fetchPjaxFactory(win, {
+                formSelector: formSelector
+            });
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+
+            cy.get(`form${formSelector}`).within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit();
+                cy.get('@spyDoPjax').should('be.called'); // assert
+            });
+        });
+    });
+
+    it('should not handle forms which do not match the given formSelector option', function() {
+        cy.window().then(win => {
+            const formSelector = '.special-form';
+
+            const subject = fetchPjaxFactory(win, {
+                formSelector: formSelector
+            });
+
+            cy.spyOnFetchPjax(subject, 'doPjax');
+
+            cy
+                .get(`form:not(${formSelector})[data-cy-form-get]`)
+                .within($form => {
+                    cy.get('input[name=firstname]').type(firstName);
+                    cy.get('input[name=lastname]').type(lastName);
+
+                    cy.root().submit();
+                    cy.get('@spyDoPjax').should('not.be.called');
+                });
+        });
+    });
+
+    it('should send forms with get method by default', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('[data-cy-form-get]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+
+                    expect(fetchCallArgs).not.to.include({
+                        method: 'POST'
+                    });
+                });
+            });
+        });
+    });
+
+    it('should send forms with the specific method type when present', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            cy.get('[data-cy-form-post]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+
+                    expect(fetchCallArgs).to.include({
+                        method: 'POST'
+                    });
+                });
+            });
+        });
+    });
+
+    it('should send forms with the specific encoding when present in enctype', function() {
+        cy.window().then(win => {
+            const subject = fetchPjaxFactory(win);
+
+            // Forms with multipart Form Data will be sent with FormData body
+            // rather than URLSearchParams
+            cy.get('[enctype="multipart/form-data"]').within($form => {
+                cy.get('input[name=firstname]').type(firstName);
+                cy.get('input[name=lastname]').type(lastName);
+                cy.root().submit().then(() => {
+                    const fetchCallArgs = winFetchSpy.args[0][1];
+                    let bodyName = Object.getPrototypeOf(fetchCallArgs.body)
+                        .constructor.name;
+
+                    // Unsure why this doens't work but whilst we known it's an instance of FormData
+                    // JavaScript's instanceof returns a false result
+                    expect(
+                        bodyName,
+                        'Body was not an instance of FormData'
+                    ).to.equal('FormData');
+                });
+            });
         });
     });
 });
@@ -791,6 +933,76 @@ describe('Popstate handling', () => {
             cy.get('@spyUpdateHistoryState').should('not.be.called');
 
             expect(win.history.state).not.to.exist;
+        });
+    });
+});
+
+describe('Internal "hash" link handling', () => {
+    beforeEach(() => {
+        cy.visit('/', {
+            onBeforeLoad(win) {
+                cy.spy(win, 'fetch').as('windowFetch');
+            }
+        });
+    });
+
+    it('should handle internal links', () => {
+        cy.window().then(win => {
+            fetchPjaxFactory(win);
+
+            cy.get('[data-cy-internal]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.get('[data-cy-internal-two]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor-two');
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/');
+        });
+    });
+
+    it('should scroll to a matching target when returning to a history entry whose url contains a hash', function() {
+        cy.window().then(win => {
+            fetchPjaxFactory(win);
+
+            cy.get('[data-cy-internal]').click();
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            cy.get('[data-cy-link]').click({
+                force: true
+            });
+
+            cy.assetPjaxNavigationTo(page1Url);
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/#internal-anchor');
+
+            // Has the target represented by the hash value in the url
+            // been scroll to (ie: is it within the current viewport?)
+            cy.get('#internal-anchor').should($el => {
+                const elementTop = $el.offset().top;
+                const elementBottom = elementTop + $el.outerHeight();
+                const viewportTop = $(win).scrollTop();
+                const viewportBottom = viewportTop + $(win).height();
+                const inViewPort =
+                    elementBottom > viewportTop && elementTop < viewportBottom;
+
+                expect(inViewPort, 'The target was not within the viewport').to
+                    .be.true;
+            });
+
+            cy.go('back');
+
+            cy.url().should('eq', baseUrl + '/');
         });
     });
 });

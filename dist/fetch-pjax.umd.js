@@ -447,6 +447,597 @@
 
 	var lodash_isnil = isNil;
 
+	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+	function createCommonjsModule(fn, module) {
+		return module = { exports: {} }, fn(module, module.exports), module.exports;
+	}
+
+	var lodash_isempty = createCommonjsModule(function (module, exports) {
+	/**
+	 * lodash (Custom Build) <https://lodash.com/>
+	 * Build: `lodash modularize exports="npm" -o ./`
+	 * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+	 * Released under MIT license <https://lodash.com/license>
+	 * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+	 * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+	 */
+
+	/** Used as references for various `Number` constants. */
+	var MAX_SAFE_INTEGER = 9007199254740991;
+
+	/** `Object#toString` result references. */
+	var argsTag = '[object Arguments]',
+	    funcTag = '[object Function]',
+	    genTag = '[object GeneratorFunction]',
+	    mapTag = '[object Map]',
+	    objectTag = '[object Object]',
+	    promiseTag = '[object Promise]',
+	    setTag = '[object Set]',
+	    weakMapTag = '[object WeakMap]';
+
+	var dataViewTag = '[object DataView]';
+
+	/**
+	 * Used to match `RegExp`
+	 * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+	 */
+	var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+	/** Used to detect host constructors (Safari). */
+	var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+	/** Detect free variable `global` from Node.js. */
+	var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
+
+	/** Detect free variable `self`. */
+	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+	/** Used as a reference to the global object. */
+	var root = freeGlobal || freeSelf || Function('return this')();
+
+	/** Detect free variable `exports`. */
+	var freeExports = 'object' == 'object' && exports && !exports.nodeType && exports;
+
+	/** Detect free variable `module`. */
+	var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
+
+	/** Detect the popular CommonJS extension `module.exports`. */
+	var moduleExports = freeModule && freeModule.exports === freeExports;
+
+	/**
+	 * Gets the value at `key` of `object`.
+	 *
+	 * @private
+	 * @param {Object} [object] The object to query.
+	 * @param {string} key The key of the property to get.
+	 * @returns {*} Returns the property value.
+	 */
+	function getValue(object, key) {
+	  return object == null ? undefined : object[key];
+	}
+
+	/**
+	 * Checks if `value` is a host object in IE < 9.
+	 *
+	 * @private
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+	 */
+	function isHostObject(value) {
+	  // Many host objects are `Object` objects that can coerce to strings
+	  // despite having improperly defined `toString` methods.
+	  var result = false;
+	  if (value != null && typeof value.toString != 'function') {
+	    try {
+	      result = !!(value + '');
+	    } catch (e) {}
+	  }
+	  return result;
+	}
+
+	/**
+	 * Creates a unary function that invokes `func` with its argument transformed.
+	 *
+	 * @private
+	 * @param {Function} func The function to wrap.
+	 * @param {Function} transform The argument transform.
+	 * @returns {Function} Returns the new function.
+	 */
+	function overArg(func, transform) {
+	  return function(arg) {
+	    return func(transform(arg));
+	  };
+	}
+
+	/** Used for built-in method references. */
+	var funcProto = Function.prototype,
+	    objectProto = Object.prototype;
+
+	/** Used to detect overreaching core-js shims. */
+	var coreJsData = root['__core-js_shared__'];
+
+	/** Used to detect methods masquerading as native. */
+	var maskSrcKey = (function() {
+	  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+	  return uid ? ('Symbol(src)_1.' + uid) : '';
+	}());
+
+	/** Used to resolve the decompiled source of functions. */
+	var funcToString = funcProto.toString;
+
+	/** Used to check objects for own properties. */
+	var hasOwnProperty = objectProto.hasOwnProperty;
+
+	/**
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+	 * of values.
+	 */
+	var objectToString = objectProto.toString;
+
+	/** Used to detect if a method is native. */
+	var reIsNative = RegExp('^' +
+	  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+	  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+	);
+
+	/** Built-in value references. */
+	var Buffer = moduleExports ? root.Buffer : undefined,
+	    propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+	/* Built-in method references for those with the same name as other `lodash` methods. */
+	var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined,
+	    nativeKeys = overArg(Object.keys, Object);
+
+	/* Built-in method references that are verified to be native. */
+	var DataView = getNative(root, 'DataView'),
+	    Map = getNative(root, 'Map'),
+	    Promise = getNative(root, 'Promise'),
+	    Set = getNative(root, 'Set'),
+	    WeakMap = getNative(root, 'WeakMap');
+
+	/** Detect if properties shadowing those on `Object.prototype` are non-enumerable. */
+	var nonEnumShadows = !propertyIsEnumerable.call({ 'valueOf': 1 }, 'valueOf');
+
+	/** Used to detect maps, sets, and weakmaps. */
+	var dataViewCtorString = toSource(DataView),
+	    mapCtorString = toSource(Map),
+	    promiseCtorString = toSource(Promise),
+	    setCtorString = toSource(Set),
+	    weakMapCtorString = toSource(WeakMap);
+
+	/**
+	 * The base implementation of `getTag`.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {string} Returns the `toStringTag`.
+	 */
+	function baseGetTag(value) {
+	  return objectToString.call(value);
+	}
+
+	/**
+	 * The base implementation of `_.isNative` without bad shim checks.
+	 *
+	 * @private
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a native function,
+	 *  else `false`.
+	 */
+	function baseIsNative(value) {
+	  if (!isObject(value) || isMasked(value)) {
+	    return false;
+	  }
+	  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
+	  return pattern.test(toSource(value));
+	}
+
+	/**
+	 * Gets the native function at `key` of `object`.
+	 *
+	 * @private
+	 * @param {Object} object The object to query.
+	 * @param {string} key The key of the method to get.
+	 * @returns {*} Returns the function if it's native, else `undefined`.
+	 */
+	function getNative(object, key) {
+	  var value = getValue(object, key);
+	  return baseIsNative(value) ? value : undefined;
+	}
+
+	/**
+	 * Gets the `toStringTag` of `value`.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {string} Returns the `toStringTag`.
+	 */
+	var getTag = baseGetTag;
+
+	// Fallback for data views, maps, sets, and weak maps in IE 11,
+	// for data views in Edge < 14, and promises in Node.js.
+	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+	    (Map && getTag(new Map) != mapTag) ||
+	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+	    (Set && getTag(new Set) != setTag) ||
+	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+	  getTag = function(value) {
+	    var result = objectToString.call(value),
+	        Ctor = result == objectTag ? value.constructor : undefined,
+	        ctorString = Ctor ? toSource(Ctor) : undefined;
+
+	    if (ctorString) {
+	      switch (ctorString) {
+	        case dataViewCtorString: return dataViewTag;
+	        case mapCtorString: return mapTag;
+	        case promiseCtorString: return promiseTag;
+	        case setCtorString: return setTag;
+	        case weakMapCtorString: return weakMapTag;
+	      }
+	    }
+	    return result;
+	  };
+	}
+
+	/**
+	 * Checks if `func` has its source masked.
+	 *
+	 * @private
+	 * @param {Function} func The function to check.
+	 * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+	 */
+	function isMasked(func) {
+	  return !!maskSrcKey && (maskSrcKey in func);
+	}
+
+	/**
+	 * Checks if `value` is likely a prototype object.
+	 *
+	 * @private
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+	 */
+	function isPrototype(value) {
+	  var Ctor = value && value.constructor,
+	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+
+	  return value === proto;
+	}
+
+	/**
+	 * Converts `func` to its source code.
+	 *
+	 * @private
+	 * @param {Function} func The function to process.
+	 * @returns {string} Returns the source code.
+	 */
+	function toSource(func) {
+	  if (func != null) {
+	    try {
+	      return funcToString.call(func);
+	    } catch (e) {}
+	    try {
+	      return (func + '');
+	    } catch (e) {}
+	  }
+	  return '';
+	}
+
+	/**
+	 * Checks if `value` is likely an `arguments` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+	 *  else `false`.
+	 * @example
+	 *
+	 * _.isArguments(function() { return arguments; }());
+	 * // => true
+	 *
+	 * _.isArguments([1, 2, 3]);
+	 * // => false
+	 */
+	function isArguments(value) {
+	  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+	}
+
+	/**
+	 * Checks if `value` is classified as an `Array` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+	 * @example
+	 *
+	 * _.isArray([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isArray(document.body.children);
+	 * // => false
+	 *
+	 * _.isArray('abc');
+	 * // => false
+	 *
+	 * _.isArray(_.noop);
+	 * // => false
+	 */
+	var isArray = Array.isArray;
+
+	/**
+	 * Checks if `value` is array-like. A value is considered array-like if it's
+	 * not a function and has a `value.length` that's an integer greater than or
+	 * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+	 * @example
+	 *
+	 * _.isArrayLike([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isArrayLike(document.body.children);
+	 * // => true
+	 *
+	 * _.isArrayLike('abc');
+	 * // => true
+	 *
+	 * _.isArrayLike(_.noop);
+	 * // => false
+	 */
+	function isArrayLike(value) {
+	  return value != null && isLength(value.length) && !isFunction(value);
+	}
+
+	/**
+	 * This method is like `_.isArrayLike` except that it also checks if `value`
+	 * is an object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an array-like object,
+	 *  else `false`.
+	 * @example
+	 *
+	 * _.isArrayLikeObject([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isArrayLikeObject(document.body.children);
+	 * // => true
+	 *
+	 * _.isArrayLikeObject('abc');
+	 * // => false
+	 *
+	 * _.isArrayLikeObject(_.noop);
+	 * // => false
+	 */
+	function isArrayLikeObject(value) {
+	  return isObjectLike(value) && isArrayLike(value);
+	}
+
+	/**
+	 * Checks if `value` is a buffer.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.3.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+	 * @example
+	 *
+	 * _.isBuffer(new Buffer(2));
+	 * // => true
+	 *
+	 * _.isBuffer(new Uint8Array(2));
+	 * // => false
+	 */
+	var isBuffer = nativeIsBuffer || stubFalse;
+
+	/**
+	 * Checks if `value` is an empty object, collection, map, or set.
+	 *
+	 * Objects are considered empty if they have no own enumerable string keyed
+	 * properties.
+	 *
+	 * Array-like values such as `arguments` objects, arrays, buffers, strings, or
+	 * jQuery-like collections are considered empty if they have a `length` of `0`.
+	 * Similarly, maps and sets are considered empty if they have a `size` of `0`.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is empty, else `false`.
+	 * @example
+	 *
+	 * _.isEmpty(null);
+	 * // => true
+	 *
+	 * _.isEmpty(true);
+	 * // => true
+	 *
+	 * _.isEmpty(1);
+	 * // => true
+	 *
+	 * _.isEmpty([1, 2, 3]);
+	 * // => false
+	 *
+	 * _.isEmpty({ 'a': 1 });
+	 * // => false
+	 */
+	function isEmpty(value) {
+	  if (isArrayLike(value) &&
+	      (isArray(value) || typeof value == 'string' ||
+	        typeof value.splice == 'function' || isBuffer(value) || isArguments(value))) {
+	    return !value.length;
+	  }
+	  var tag = getTag(value);
+	  if (tag == mapTag || tag == setTag) {
+	    return !value.size;
+	  }
+	  if (nonEnumShadows || isPrototype(value)) {
+	    return !nativeKeys(value).length;
+	  }
+	  for (var key in value) {
+	    if (hasOwnProperty.call(value, key)) {
+	      return false;
+	    }
+	  }
+	  return true;
+	}
+
+	/**
+	 * Checks if `value` is classified as a `Function` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+	 * @example
+	 *
+	 * _.isFunction(_);
+	 * // => true
+	 *
+	 * _.isFunction(/abc/);
+	 * // => false
+	 */
+	function isFunction(value) {
+	  // The use of `Object#toString` avoids issues with the `typeof` operator
+	  // in Safari 8-9 which returns 'object' for typed array and other constructors.
+	  var tag = isObject(value) ? objectToString.call(value) : '';
+	  return tag == funcTag || tag == genTag;
+	}
+
+	/**
+	 * Checks if `value` is a valid array-like length.
+	 *
+	 * **Note:** This method is loosely based on
+	 * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+	 * @example
+	 *
+	 * _.isLength(3);
+	 * // => true
+	 *
+	 * _.isLength(Number.MIN_VALUE);
+	 * // => false
+	 *
+	 * _.isLength(Infinity);
+	 * // => false
+	 *
+	 * _.isLength('3');
+	 * // => false
+	 */
+	function isLength(value) {
+	  return typeof value == 'number' &&
+	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+	}
+
+	/**
+	 * Checks if `value` is the
+	 * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+	 * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+	 * @example
+	 *
+	 * _.isObject({});
+	 * // => true
+	 *
+	 * _.isObject([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isObject(_.noop);
+	 * // => true
+	 *
+	 * _.isObject(null);
+	 * // => false
+	 */
+	function isObject(value) {
+	  var type = typeof value;
+	  return !!value && (type == 'object' || type == 'function');
+	}
+
+	/**
+	 * Checks if `value` is object-like. A value is object-like if it's not `null`
+	 * and has a `typeof` result of "object".
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+	 * @example
+	 *
+	 * _.isObjectLike({});
+	 * // => true
+	 *
+	 * _.isObjectLike([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isObjectLike(_.noop);
+	 * // => false
+	 *
+	 * _.isObjectLike(null);
+	 * // => false
+	 */
+	function isObjectLike(value) {
+	  return !!value && typeof value == 'object';
+	}
+
+	/**
+	 * This method returns `false`.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.13.0
+	 * @category Util
+	 * @returns {boolean} Returns `false`.
+	 * @example
+	 *
+	 * _.times(2, _.stubFalse);
+	 * // => [false, false]
+	 */
+	function stubFalse() {
+	  return false;
+	}
+
+	module.exports = isEmpty;
+	});
+
 	/**
 	 * lodash 4.0.1 (Custom Build) <https://lodash.com/>
 	 * Build: `lodash modularize exports="npm" -o ./`
@@ -542,8 +1133,6 @@
 	}
 
 	var lodash_isstring = isString;
-
-	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 	/**
 	 * lodash (Custom Build) <https://lodash.com/>
@@ -3286,17 +3875,325 @@
 
 	var lodash_curry = curry;
 
+	/**
+	 *
+	 *
+	 * @author Jerry Bendy <jerry@icewingcc.com>
+	 * @licence MIT
+	 *
+	 */
+
+	(function(self) {
+
+	    var nativeURLSearchParams = self.URLSearchParams ? self.URLSearchParams : null,
+	        isSupportObjectConstructor = nativeURLSearchParams && (new nativeURLSearchParams({a: 1})).toString() === 'a=1',
+	        // There is a bug in safari 10.1 (and earlier) that incorrectly decodes `%2B` as an empty space and not a plus.
+	        decodesPlusesCorrectly = nativeURLSearchParams && (new nativeURLSearchParams('s=%2B').get('s') === '+'),
+	        __URLSearchParams__ = "__URLSearchParams__",
+	        prototype = URLSearchParamsPolyfill.prototype,
+	        iterable = !!(self.Symbol && self.Symbol.iterator);
+
+	    if (nativeURLSearchParams && isSupportObjectConstructor && decodesPlusesCorrectly) {
+	        return;
+	    }
+
+
+	    /**
+	     * Make a URLSearchParams instance
+	     *
+	     * @param {object|string|URLSearchParams} search
+	     * @constructor
+	     */
+	    function URLSearchParamsPolyfill(search) {
+	        search = search || "";
+
+	        // support construct object with another URLSearchParams instance
+	        if (search instanceof URLSearchParams || search instanceof URLSearchParamsPolyfill) {
+	            search = search.toString();
+	        }
+	        this [__URLSearchParams__] = parseToDict(search);
+	    }
+
+
+	    /**
+	     * Appends a specified key/value pair as a new search parameter.
+	     *
+	     * @param {string} name
+	     * @param {string} value
+	     */
+	    prototype.append = function(name, value) {
+	        appendTo(this [__URLSearchParams__], name, value);
+	    };
+
+	    /**
+	     * Deletes the given search parameter, and its associated value,
+	     * from the list of all search parameters.
+	     *
+	     * @param {string} name
+	     */
+	    prototype.delete = function(name) {
+	        delete this [__URLSearchParams__] [name];
+	    };
+
+	    /**
+	     * Returns the first value associated to the given search parameter.
+	     *
+	     * @param {string} name
+	     * @returns {string|null}
+	     */
+	    prototype.get = function(name) {
+	        var dict = this [__URLSearchParams__];
+	        return name in dict ? dict[name][0] : null;
+	    };
+
+	    /**
+	     * Returns all the values association with a given search parameter.
+	     *
+	     * @param {string} name
+	     * @returns {Array}
+	     */
+	    prototype.getAll = function(name) {
+	        var dict = this [__URLSearchParams__];
+	        return name in dict ? dict [name].slice(0) : [];
+	    };
+
+	    /**
+	     * Returns a Boolean indicating if such a search parameter exists.
+	     *
+	     * @param {string} name
+	     * @returns {boolean}
+	     */
+	    prototype.has = function(name) {
+	        return name in this [__URLSearchParams__];
+	    };
+
+	    /**
+	     * Sets the value associated to a given search parameter to
+	     * the given value. If there were several values, delete the
+	     * others.
+	     *
+	     * @param {string} name
+	     * @param {string} value
+	     */
+	    prototype.set = function set(name, value) {
+	        this [__URLSearchParams__][name] = ['' + value];
+	    };
+
+	    /**
+	     * Returns a string containg a query string suitable for use in a URL.
+	     *
+	     * @returns {string}
+	     */
+	    prototype.toString = function() {
+	        var dict = this[__URLSearchParams__], query = [], i, key, name, value;
+	        for (key in dict) {
+	            name = encode(key);
+	            for (i = 0, value = dict[key]; i < value.length; i++) {
+	                query.push(name + '=' + encode(value[i]));
+	            }
+	        }
+	        return query.join('&');
+	    };
+
+	    // There is a bug in Safari 10.1 and `Proxy`ing it is not enough.
+	    var forSureUsePolyfill = !decodesPlusesCorrectly;
+	    var useProxy = (!forSureUsePolyfill && nativeURLSearchParams && !isSupportObjectConstructor && self.Proxy);
+	    /*
+	     * Apply polifill to global object and append other prototype into it
+	     */
+	    self.URLSearchParams = useProxy ?
+	        // Safari 10.0 doesn't support Proxy, so it won't extend URLSearchParams on safari 10.0
+	        new Proxy(nativeURLSearchParams, {
+	            construct: function(target, args) {
+	                return new target((new URLSearchParamsPolyfill(args[0]).toString()));
+	            }
+	        }) :
+	        URLSearchParamsPolyfill;
+
+
+	    var USPProto = self.URLSearchParams.prototype;
+
+	    USPProto.polyfill = true;
+
+	    /**
+	     *
+	     * @param {function} callback
+	     * @param {object} thisArg
+	     */
+	    USPProto.forEach = USPProto.forEach || function(callback, thisArg) {
+	        var dict = parseToDict(this.toString());
+	        Object.getOwnPropertyNames(dict).forEach(function(name) {
+	            dict[name].forEach(function(value) {
+	                callback.call(thisArg, value, name, this);
+	            }, this);
+	        }, this);
+	    };
+
+	    /**
+	     * Sort all name-value pairs
+	     */
+	    USPProto.sort = USPProto.sort || function() {
+	        var dict = parseToDict(this.toString()), keys = [], k, i, j;
+	        for (k in dict) {
+	            keys.push(k);
+	        }
+	        keys.sort();
+
+	        for (i = 0; i < keys.length; i++) {
+	            this.delete(keys[i]);
+	        }
+	        for (i = 0; i < keys.length; i++) {
+	            var key = keys[i], values = dict[key];
+	            for (j = 0; j < values.length; j++) {
+	                this.append(key, values[j]);
+	            }
+	        }
+	    };
+
+	    /**
+	     * Returns an iterator allowing to go through all keys of
+	     * the key/value pairs contained in this object.
+	     *
+	     * @returns {function}
+	     */
+	    USPProto.keys = USPProto.keys || function() {
+	        var items = [];
+	        this.forEach(function(item, name) {
+	            items.push([name]);
+	        });
+	        return makeIterator(items);
+	    };
+
+	    /**
+	     * Returns an iterator allowing to go through all values of
+	     * the key/value pairs contained in this object.
+	     *
+	     * @returns {function}
+	     */
+	    USPProto.values = USPProto.values || function() {
+	        var items = [];
+	        this.forEach(function(item) {
+	            items.push([item]);
+	        });
+	        return makeIterator(items);
+	    };
+
+	    /**
+	     * Returns an iterator allowing to go through all key/value
+	     * pairs contained in this object.
+	     *
+	     * @returns {function}
+	     */
+	    USPProto.entries = USPProto.entries || function() {
+	        var items = [];
+	        this.forEach(function(item, name) {
+	            items.push([name, item]);
+	        });
+	        return makeIterator(items);
+	    };
+
+
+	    if (iterable) {
+	        USPProto[self.Symbol.iterator] = USPProto[self.Symbol.iterator] || USPProto.entries;
+	    }
+
+
+	    function encode(str) {
+	        var replace = {
+	            '!': '%21',
+	            "'": '%27',
+	            '(': '%28',
+	            ')': '%29',
+	            '~': '%7E',
+	            '%20': '+',
+	            '%00': '\x00'
+	        };
+	        return encodeURIComponent(str).replace(/[!'\(\)~]|%20|%00/g, function(match) {
+	            return replace[match];
+	        });
+	    }
+
+	    function decode(str) {
+	        return decodeURIComponent(str.replace(/\+/g, ' '));
+	    }
+
+	    function makeIterator(arr) {
+	        var iterator = {
+	            next: function() {
+	                var value = arr.shift();
+	                return {done: value === undefined, value: value};
+	            }
+	        };
+
+	        if (iterable) {
+	            iterator[self.Symbol.iterator] = function() {
+	                return iterator;
+	            };
+	        }
+
+	        return iterator;
+	    }
+
+	    function parseToDict(search) {
+	        var dict = {};
+
+	        if (typeof search === "object") {
+	            for (var key in search) {
+	                if (search.hasOwnProperty(key)) {
+	                    appendTo(dict, key, search[key]);
+	                }
+	            }
+
+	        } else {
+	            // remove first '?'
+	            if (search.indexOf("?") === 0) {
+	                search = search.slice(1);
+	            }
+
+	            var pairs = search.split("&");
+	            for (var j = 0; j < pairs.length; j++) {
+	                var value = pairs [j],
+	                    index = value.indexOf('=');
+
+	                if (-1 < index) {
+	                    appendTo(dict, decode(value.slice(0, index)), decode(value.slice(index + 1)));
+
+	                } else {
+	                    if (value) {
+	                        appendTo(dict, decode(value), '');
+	                    }
+	                }
+	            }
+	        }
+
+	        return dict;
+	    }
+
+	    function appendTo(dict, name, value) {
+	        var val = typeof value === 'string' ? value : (
+	            value !== null && typeof value.toString === 'function' ? value.toString() : JSON.stringify(value)
+	        );
+
+	        if (name in dict) {
+	            dict[name].push(val);
+	        } else {
+	            dict[name] = [val];
+	        }
+	    }
+
+	})(typeof commonjsGlobal !== 'undefined' ? commonjsGlobal : (typeof window !== 'undefined' ? window : commonjsGlobal));
+
 	class FetchPjax {
 		constructor(options) {
 			this.options = this.getDefaults(options);
 
 			this.targets = {};
 
-			this.state = {};
-
 			this.initpop = false;
 
 			this.isPjaxing = false;
+
+			this.currentPathname = '';
 
 			// Bind all the callbacks
 			lodash_bindall(this, [
@@ -3311,7 +4208,7 @@
 
 			// Requires two args but for Promise chaining it's
 			// easier to curry/partially apply
-			this.handlePjaxSuccess = lodash_curry(this.handlePjaxSuccess, 2);
+			this.handlePjaxSuccess = lodash_curry(this.handlePjaxSuccess, 4);
 
 			if (this.options.autoInit) {
 				this.init();
@@ -3323,6 +4220,9 @@
 				autoInit: true,
 				eventType: 'click',
 				selector: 'a',
+				formSelector: 'form',
+				ignoreSelector: '[data-fetch-pjax-ignore]',
+				handleForms: true,
 				targets: {
 					content: 'main',
 					title: 'title'
@@ -3364,7 +4264,13 @@
 				);
 			}
 
+			this.updateCurrentPathname();
+
 			this.addListeners();
+		}
+
+		updateCurrentPathname() {
+			this.currentPathname = document.location.pathname;
 		}
 
 		addListeners() {
@@ -3377,7 +4283,9 @@
 
 			document.addEventListener('keydown', this.handleKeyPress);
 
-			document.addEventListener('submit', this.handleFormSubmit);
+			if (this.options.handleForms) {
+				document.addEventListener('submit', this.handleFormSubmit);
+			}
 
 			window.addEventListener('popstate', e => this.handlePopState(e));
 		}
@@ -3385,11 +4293,13 @@
 		checkMatchingTarget(e) {
 			let target = e.target;
 
+			if (target.matches(this.options.ignoreSelector)) return;
+
 			if (target && target.matches(this.options.selector)) {
 				return target;
 			}
 
-			return (target = target.closest(this.options.selector));
+			return target.closest(this.options.selector);
 		}
 
 		handleKeyPress(e) {
@@ -3409,31 +4319,69 @@
 			}
 		}
 
+		buildQueryStringFromFormData(formData) {
+			let query = '';
+
+			for (let pair of formData.entries()) {
+				query += `&${pair[0]}=${pair[1]}`;
+			}
+
+			// Trim of the first (unwanted) ampersand
+			return query.substring(1);
+		}
+
 		handleFormSubmit(e) {
 			let target = e.target;
 
 			if (lodash_isnil(target)) {
 				return;
 			}
+
+			if (!target.matches(this.options.formSelector)) return;
+
 			// Grab all the valid inputs
 			const formData = new FormData(target);
 
-			let query = '';
+			// Determine whether to send as GET or POST
+			if (target.method.toUpperCase() === 'POST') {
+				const encoding = target.encoding.includes('form-data')
+					? 'form-data'
+					: 'urlencoded';
 
-			for (let pair of formData.entries()) {
-				query += pair[0] + '=' + pair[1];
-			}
-
-			if (query === undefined) {
-				return;
+				this.sendFormWithPost(target.action, formData, encoding);
+			} else {
+				this.sendFormWithGet(target.action, formData);
 			}
 
 			// Only cancel event if all the conditionals pass
 			e.preventDefault();
+		}
 
-			const url = `${target.action}?${query}`;
+		/**
+		 * Sends the Form data as a POST request 
+		 * see https://stackoverflow.com/questions/46640024/how-do-i-post-form-data-with-fetch-api
+		 * @param  {string} url      the url to which the form data request should be sent
+		 * @param  {FormData} formData the data from the form being submitted
+		 * @return {void}          
+		 */
+		sendFormWithPost(url, data, type = 'urlencoded') {
+			// For everything other than form-data
+			// transform the FormData object into a query-string
+			// via URLSearchParams (polyfilled)
+			if (type !== 'form-data') {
+				data = new URLSearchParams(data); // polyfilled via https://www.npmjs.com/package/url-search-params-polyfill
+			}
 
-			// Request this
+			this.doPjax(url, true, {
+				method: 'POST',
+				body: data // will be one of FormData or URLSearchParams
+			});
+		}
+
+		sendFormWithGet(url, formData) {
+			const query = this.buildQueryStringFromFormData(formData);
+			if (lodash_isnil(query)) return;
+			url = `${url}?${query}`;
 			this.doPjax(url);
 		}
 
@@ -3474,14 +4422,20 @@
 
 			if (element.getAttribute('target') === '_blank') return;
 
+			if (element.hash && element.pathname === window.location.pathname)
+				return true;
+
 			const href = element.href; // avoid the literal href attr as this may be a relative path as a string which cannot be parsed by new URL
 
 			if (!href) {
 				return;
 			}
 
-			// Allow cross origin links to behave as normal
-			if (new URL(href).hostname !== location.hostname) {
+			// Ignore cross origin links and allow to behave as normal
+			if (
+				location.protocol !== element.protocol ||
+				location.hostname !== element.hostname
+			) {
 				return;
 			}
 
@@ -3492,15 +4446,22 @@
 			e.preventDefault();
 		}
 
-		handlePopState(e) {
-			this.state = e.state;
+		stripHash(url) {
+			return url.replace(/#.*/, '');
+		}
 
-			// If no state than trigger a PJAX request for the page
-			if (lodash_isnil(this.state)) {
-				return this.doPjax(document.location.href);
+		handlePopState(e) {
+			const historyState = e.state;
+
+			// On same path so could be hashchange so ignore
+			if (this.currentPathname === location.pathname) return;
+
+			// Re-request page content but don't add a new History entry as one already exists
+			if (lodash_isnil(historyState)) {
+				return this.doPjax(document.location.href, false);
 			}
 
-			const { contents, url } = this.state;
+			const { contents, url } = historyState;
 
 			// If we have a cached HTML for this History state then just show that
 			if (
@@ -3515,6 +4476,13 @@
 				// happened as per UX best practise
 				setTimeout(() => {
 					this.render(JSON.parse(contents));
+
+					const hash = this.parseHash(url);
+
+					if (!lodash_isnil(hash) && hash.length) {
+						this.scrollToTarget(hash);
+					}
+
 					this.triggerCallback('onSuccessPjax', {
 						url,
 						html: contents
@@ -3523,17 +4491,55 @@
 				}, this.options.popStateFauxLoadTime);
 			} else if (!lodash_isnil(url)) {
 				// Otherwise fetch the content via PJAX
-				this.doPjax(this.state.url, false);
+				this.doPjax(historyState.url, false);
 			}
 		}
 
-		buildFetchOptions(url) {
-			const fetchOptions = this.options.fetchOptions;
-			fetchOptions.url = url;
-			return this.beforeSend(fetchOptions);
+		buildFetchOptions(optionOverides = {}) {
+			let bodyWithNonMergableValues = false;
+
+			let fetchOptions = Object.assign(
+				{},
+				this.options.fetchOptions,
+				optionOverides
+			);
+
+			if (
+				(fetchOptions.body && fetchOptions.body instanceof FormData) ||
+				fetchOptions.body instanceof URLSearchParams
+			) {
+				bodyWithNonMergableValues = fetchOptions.body;
+			}
+
+			fetchOptions = this.beforeSend(fetchOptions);
+
+			// Restore following assign-deep operation but only if user hasn't overidden
+			if (bodyWithNonMergableValues && lodash_isempty(fetchOptions.body)) {
+				fetchOptions.body = bodyWithNonMergableValues;
+			}
+
+			if (fetchOptions.body && fetchOptions.body instanceof URLSearchParams) {
+				fetchOptions.headers = Object.assign({}, fetchOptions.headers, {
+					'Content-Type':
+						'application/x-www-form-urlencoded; charset=UTF-8'
+				});
+			}
+
+			// See https://www.npmjs.com/package/url-search-params-polyfill#known-issues
+			return fetchOptions;
 		}
 
-		doPjax(url, shouldUpdateState = true) {
+		parseHash(url) {
+			return this.parseURL(url).hash;
+		}
+
+		parseURL(url) {
+			const a = document.createElement('a');
+			a.href = url;
+			return a;
+		}
+
+		doPjax(url, shouldUpdateState = true, options = {}) {
 			// If we are already processing a request just ignore
 			// nb: until we have a way to cancel fetch requests
 			// we can't manage this more effectively
@@ -3542,14 +4548,25 @@
 			// Set state as Pjaxing to block
 			this.isPjaxing = true;
 
-			const fetchOptions = this.buildFetchOptions(url);
+			// Is there a hash? Save a reference
+			const hash = url.includes('#') ? this.parseHash(url) : '';
+
+			const optionOverides = Object.assign({}, options, {
+				url: this.stripHash(url)
+			});
+
+			const fetchOptions = this.buildFetchOptions(optionOverides);
 
 			this.triggerCallback('onBeforePjax', {
 				fetchOptions
 			});
 
 			// Curried - allows us provide the url arg upfront
-			const handlePjaxSuccess = this.handlePjaxSuccess(url);
+			const handlePjaxSuccess = this.handlePjaxSuccess(
+				url,
+				hash,
+				shouldUpdateState
+			);
 
 			// fetchOptions.headers = new Headers(fetchOptions.headers);
 			fetch(fetchOptions.url, fetchOptions)
@@ -3563,13 +4580,30 @@
 				.catch(this.handlePjaxError);
 		}
 
-		handlePjaxSuccess(url, html) {
-			this.updateHistoryState(url, html);
+		scrollToTarget(hash) {
+			const hashScrollTarget = document.querySelector(hash);
+
+			if (hashScrollTarget) {
+				hashScrollTarget.scrollIntoView();
+			}
+		}
+
+		handlePjaxSuccess(url, hash, shouldUpdateState, html) {
+			if (shouldUpdateState) {
+				this.updateHistoryState(url, html);
+			}
+
+			this.updateCurrentPathname();
 
 			try {
 				this.render(html);
 			} catch (e) {
 				throw new Error(`Unable to render page at ${url}: ${e}`);
+			}
+
+			// Attempt to scroll to hash target if it exists
+			if (!lodash_isnil(hash) && hash.length) {
+				this.scrollToTarget(hash);
 			}
 
 			this.triggerCallback('onSuccessPjax', {
@@ -3702,18 +4736,14 @@
 		}
 
 		updateHistoryState(url, html, force = false, type = 'push') {
-			if (!force && window.history.state && window.history.state.url == url) {
-				return;
-			}
-
-			this.state = {
+			const newState = {
 				url: url,
 				contents: JSON.stringify(html)
 			};
 
 			const method = `${type}State`;
 
-			window.history[method](this.state, null, url);
+			window.history[method](newState, null, url);
 		}
 	}
 

@@ -5,9 +5,11 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var assignDeep = _interopDefault(require('assign-deep'));
 var domify = _interopDefault(require('domify'));
 var isNil = _interopDefault(require('lodash.isnil'));
+var isEmpty = _interopDefault(require('lodash.isempty'));
 var isString = _interopDefault(require('lodash.isstring'));
 var bindAll = _interopDefault(require('lodash.bindall'));
 var curry = _interopDefault(require('lodash.curry'));
+require('url-search-params-polyfill');
 
 /**
  * APPLY MIXINS
@@ -50,11 +52,11 @@ class FetchPjax {
 
 		this.targets = {};
 
-		this.state = {};
-
 		this.initpop = false;
 
 		this.isPjaxing = false;
+
+		this.currentPathname = '';
 
 		// Bind all the callbacks
 		bindAll(this, [
@@ -69,7 +71,7 @@ class FetchPjax {
 
 		// Requires two args but for Promise chaining it's
 		// easier to curry/partially apply
-		this.handlePjaxSuccess = curry(this.handlePjaxSuccess, 2);
+		this.handlePjaxSuccess = curry(this.handlePjaxSuccess, 4);
 
 		if (this.options.autoInit) {
 			this.init();
@@ -81,6 +83,9 @@ class FetchPjax {
 			autoInit: true,
 			eventType: 'click',
 			selector: 'a',
+			formSelector: 'form',
+			ignoreSelector: '[data-fetch-pjax-ignore]',
+			handleForms: true,
 			targets: {
 				content: 'main',
 				title: 'title'
@@ -122,7 +127,13 @@ class FetchPjax {
 			);
 		}
 
+		this.updateCurrentPathname();
+
 		this.addListeners();
+	}
+
+	updateCurrentPathname() {
+		this.currentPathname = document.location.pathname;
 	}
 
 	addListeners() {
@@ -135,7 +146,9 @@ class FetchPjax {
 
 		document.addEventListener('keydown', this.handleKeyPress);
 
-		document.addEventListener('submit', this.handleFormSubmit);
+		if (this.options.handleForms) {
+			document.addEventListener('submit', this.handleFormSubmit);
+		}
 
 		window.addEventListener('popstate', e => this.handlePopState(e));
 	}
@@ -143,11 +156,13 @@ class FetchPjax {
 	checkMatchingTarget(e) {
 		let target = e.target;
 
+		if (target.matches(this.options.ignoreSelector)) return;
+
 		if (target && target.matches(this.options.selector)) {
 			return target;
 		}
 
-		return (target = target.closest(this.options.selector));
+		return target.closest(this.options.selector);
 	}
 
 	handleKeyPress(e) {
@@ -167,31 +182,69 @@ class FetchPjax {
 		}
 	}
 
+	buildQueryStringFromFormData(formData) {
+		let query = '';
+
+		for (let pair of formData.entries()) {
+			query += `&${pair[0]}=${pair[1]}`;
+		}
+
+		// Trim of the first (unwanted) ampersand
+		return query.substring(1);
+	}
+
 	handleFormSubmit(e) {
 		let target = e.target;
 
 		if (isNil(target)) {
 			return;
 		}
+
+		if (!target.matches(this.options.formSelector)) return;
+
 		// Grab all the valid inputs
 		const formData = new FormData(target);
 
-		let query = '';
+		// Determine whether to send as GET or POST
+		if (target.method.toUpperCase() === 'POST') {
+			const encoding = target.encoding.includes('form-data')
+				? 'form-data'
+				: 'urlencoded';
 
-		for (let pair of formData.entries()) {
-			query += pair[0] + '=' + pair[1];
-		}
-
-		if (query === undefined) {
-			return;
+			this.sendFormWithPost(target.action, formData, encoding);
+		} else {
+			this.sendFormWithGet(target.action, formData);
 		}
 
 		// Only cancel event if all the conditionals pass
 		e.preventDefault();
+	}
 
-		const url = `${target.action}?${query}`;
+	/**
+	 * Sends the Form data as a POST request 
+	 * see https://stackoverflow.com/questions/46640024/how-do-i-post-form-data-with-fetch-api
+	 * @param  {string} url      the url to which the form data request should be sent
+	 * @param  {FormData} formData the data from the form being submitted
+	 * @return {void}          
+	 */
+	sendFormWithPost(url, data, type = 'urlencoded') {
+		// For everything other than form-data
+		// transform the FormData object into a query-string
+		// via URLSearchParams (polyfilled)
+		if (type !== 'form-data') {
+			data = new URLSearchParams(data); // polyfilled via https://www.npmjs.com/package/url-search-params-polyfill
+		}
 
-		// Request this
+		this.doPjax(url, true, {
+			method: 'POST',
+			body: data // will be one of FormData or URLSearchParams
+		});
+	}
+
+	sendFormWithGet(url, formData) {
+		const query = this.buildQueryStringFromFormData(formData);
+		if (isNil(query)) return;
+		url = `${url}?${query}`;
 		this.doPjax(url);
 	}
 
@@ -232,14 +285,20 @@ class FetchPjax {
 
 		if (element.getAttribute('target') === '_blank') return;
 
+		if (element.hash && element.pathname === window.location.pathname)
+			return true;
+
 		const href = element.href; // avoid the literal href attr as this may be a relative path as a string which cannot be parsed by new URL
 
 		if (!href) {
 			return;
 		}
 
-		// Allow cross origin links to behave as normal
-		if (new URL(href).hostname !== location.hostname) {
+		// Ignore cross origin links and allow to behave as normal
+		if (
+			location.protocol !== element.protocol ||
+			location.hostname !== element.hostname
+		) {
 			return;
 		}
 
@@ -250,15 +309,22 @@ class FetchPjax {
 		e.preventDefault();
 	}
 
-	handlePopState(e) {
-		this.state = e.state;
+	stripHash(url) {
+		return url.replace(/#.*/, '');
+	}
 
-		// If no state than trigger a PJAX request for the page
-		if (isNil(this.state)) {
-			return this.doPjax(document.location.href);
+	handlePopState(e) {
+		const historyState = e.state;
+
+		// On same path so could be hashchange so ignore
+		if (this.currentPathname === location.pathname) return;
+
+		// Re-request page content but don't add a new History entry as one already exists
+		if (isNil(historyState)) {
+			return this.doPjax(document.location.href, false);
 		}
 
-		const { contents, url } = this.state;
+		const { contents, url } = historyState;
 
 		// If we have a cached HTML for this History state then just show that
 		if (
@@ -273,6 +339,13 @@ class FetchPjax {
 			// happened as per UX best practise
 			setTimeout(() => {
 				this.render(JSON.parse(contents));
+
+				const hash = this.parseHash(url);
+
+				if (!isNil(hash) && hash.length) {
+					this.scrollToTarget(hash);
+				}
+
 				this.triggerCallback('onSuccessPjax', {
 					url,
 					html: contents
@@ -281,17 +354,55 @@ class FetchPjax {
 			}, this.options.popStateFauxLoadTime);
 		} else if (!isNil(url)) {
 			// Otherwise fetch the content via PJAX
-			this.doPjax(this.state.url, false);
+			this.doPjax(historyState.url, false);
 		}
 	}
 
-	buildFetchOptions(url) {
-		const fetchOptions = this.options.fetchOptions;
-		fetchOptions.url = url;
-		return this.beforeSend(fetchOptions);
+	buildFetchOptions(optionOverides = {}) {
+		let bodyWithNonMergableValues = false;
+
+		let fetchOptions = Object.assign(
+			{},
+			this.options.fetchOptions,
+			optionOverides
+		);
+
+		if (
+			(fetchOptions.body && fetchOptions.body instanceof FormData) ||
+			fetchOptions.body instanceof URLSearchParams
+		) {
+			bodyWithNonMergableValues = fetchOptions.body;
+		}
+
+		fetchOptions = this.beforeSend(fetchOptions);
+
+		// Restore following assign-deep operation but only if user hasn't overidden
+		if (bodyWithNonMergableValues && isEmpty(fetchOptions.body)) {
+			fetchOptions.body = bodyWithNonMergableValues;
+		}
+
+		if (fetchOptions.body && fetchOptions.body instanceof URLSearchParams) {
+			fetchOptions.headers = Object.assign({}, fetchOptions.headers, {
+				'Content-Type':
+					'application/x-www-form-urlencoded; charset=UTF-8'
+			});
+		}
+
+		// See https://www.npmjs.com/package/url-search-params-polyfill#known-issues
+		return fetchOptions;
 	}
 
-	doPjax(url, shouldUpdateState = true) {
+	parseHash(url) {
+		return this.parseURL(url).hash;
+	}
+
+	parseURL(url) {
+		const a = document.createElement('a');
+		a.href = url;
+		return a;
+	}
+
+	doPjax(url, shouldUpdateState = true, options = {}) {
 		// If we are already processing a request just ignore
 		// nb: until we have a way to cancel fetch requests
 		// we can't manage this more effectively
@@ -300,14 +411,25 @@ class FetchPjax {
 		// Set state as Pjaxing to block
 		this.isPjaxing = true;
 
-		const fetchOptions = this.buildFetchOptions(url);
+		// Is there a hash? Save a reference
+		const hash = url.includes('#') ? this.parseHash(url) : '';
+
+		const optionOverides = Object.assign({}, options, {
+			url: this.stripHash(url)
+		});
+
+		const fetchOptions = this.buildFetchOptions(optionOverides);
 
 		this.triggerCallback('onBeforePjax', {
 			fetchOptions
 		});
 
 		// Curried - allows us provide the url arg upfront
-		const handlePjaxSuccess = this.handlePjaxSuccess(url);
+		const handlePjaxSuccess = this.handlePjaxSuccess(
+			url,
+			hash,
+			shouldUpdateState
+		);
 
 		// fetchOptions.headers = new Headers(fetchOptions.headers);
 		fetch(fetchOptions.url, fetchOptions)
@@ -321,13 +443,30 @@ class FetchPjax {
 			.catch(this.handlePjaxError);
 	}
 
-	handlePjaxSuccess(url, html) {
-		this.updateHistoryState(url, html);
+	scrollToTarget(hash) {
+		const hashScrollTarget = document.querySelector(hash);
+
+		if (hashScrollTarget) {
+			hashScrollTarget.scrollIntoView();
+		}
+	}
+
+	handlePjaxSuccess(url, hash, shouldUpdateState, html) {
+		if (shouldUpdateState) {
+			this.updateHistoryState(url, html);
+		}
+
+		this.updateCurrentPathname();
 
 		try {
 			this.render(html);
 		} catch (e) {
 			throw new Error(`Unable to render page at ${url}: ${e}`);
+		}
+
+		// Attempt to scroll to hash target if it exists
+		if (!isNil(hash) && hash.length) {
+			this.scrollToTarget(hash);
 		}
 
 		this.triggerCallback('onSuccessPjax', {
@@ -460,18 +599,14 @@ class FetchPjax {
 	}
 
 	updateHistoryState(url, html, force = false, type = 'push') {
-		if (!force && window.history.state && window.history.state.url == url) {
-			return;
-		}
-
-		this.state = {
+		const newState = {
 			url: url,
 			contents: JSON.stringify(html)
 		};
 
 		const method = `${type}State`;
 
-		window.history[method](this.state, null, url);
+		window.history[method](newState, null, url);
 	}
 }
 

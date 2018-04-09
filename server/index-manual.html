@@ -1,0 +1,49 @@
+<html>
+	
+	<head>
+		<title>Index Page</title>
+		<meta id="meta-route-data" name="route_data" content="">
+		
+	</head>
+
+	<body>
+		<main id="main">			
+			<h1>This is the Index page</h1>
+			<a data-cy-link="page1" href="/page1.html">Page 1</a>
+
+			<div class="special-selector">
+				<a href="/page1.html">Special Selector Page 1</a>
+			</div>
+
+			<a href="#internal-anchor">Internal Link</a>
+		
+
+			<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corrupti molestiae qui ducimus odio officiis praesentium iusto delectus temporibus deleniti animi dolore laboriosam ullam, placeat, minus voluptas ad eum laudantium magnam!</p>
+
+			<form data-cy-form action="/page1.html" method="post" enctype="multipart/form-data">
+				<label for="firstname">Firstname</label>
+				<input name="firstname" type="text" id="firstname">
+
+				<label for="lastname">Lastname</label>
+				<input name="lastname" type="text" id="lastname">
+
+				<button type="submit">Submit</button>
+			</form>
+
+
+			<div id="internal-anchor" style="position: relative; top: 1000em">
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Doloremque rem tempore est, commodi iure. Numquam ab voluptas consequuntur, consectetur temporibus rem nihil labore itaque eaque ad quia nobis cupiditate adipisci.</p>
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Doloremque rem tempore est, commodi iure. Numquam ab voluptas consequuntur, consectetur temporibus rem nihil labore itaque eaque ad quia nobis cupiditate adipisci.</p>
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Doloremque rem tempore est, commodi iure. Numquam ab voluptas consequuntur, consectetur temporibus rem nihil labore itaque eaque ad quia nobis cupiditate adipisci.</p>
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Doloremque rem tempore est, commodi iure. Numquam ab voluptas consequuntur, consectetur temporibus rem nihil labore itaque eaque ad quia nobis cupiditate adipisci.</p>
+			</div>
+		</main>
+
+		<aside class="sidebar"><!--intentionally empty--></aside>
+		<script src="fetch-pjax.js"></script>
+
+		<script>
+			new FetchPjax();
+		</script>
+	</body>
+</html>

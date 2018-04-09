@@ -8,7 +8,13 @@
     "type": "git",
     "url": "https://github.com/getdave/fetch-pjax.git"
   },
-  "keywords": ["fetch","pjax","ajax","javascript","js"],
+  "keywords": [
+    "fetch",
+    "pjax",
+    "ajax",
+    "javascript",
+    "js"
+  ],
   "author": "Dave Smith <hello@aheadcreative.co.uk> (https://aheadcreative.co.uk)",
   "license": "MIT",
   "bugs": {
@@ -19,8 +25,10 @@
     "domify": "^1.4.0",
     "lodash.bindall": "^4.4.0",
     "lodash.curry": "^4.1.1",
+    "lodash.isempty": "^4.4.0",
     "lodash.isnil": "^4.0.0",
-    "lodash.isstring": "^4.0.1"
+    "lodash.isstring": "^4.0.1",
+    "url-search-params-polyfill": "^3.0.0"
   },
   "devDependencies": {
     "connect": "^3.6.6",
