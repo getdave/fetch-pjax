@@ -259,6 +259,13 @@ FetchPjax is the brain child of David Smith
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
+## Roadmap
+
+- [x] Ability to designate certain origins as being allowed for cross original requests - currently all cross origins blocked
+- [x] Reduce bundle size (currently too big)
+- [x] Focus management
+- [x] Accessibility testing and improvements (`aria-live`?)
+- [x] Centralise PJAX logic and avoid multiple conditionals and optional handling across various methods
 
 
 ## Contributing
