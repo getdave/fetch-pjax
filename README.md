@@ -9,6 +9,7 @@ Fetch Pjax __provides full url, back button and history support__ via liberal us
 
 * URL updating and management
 * Back button support
+* Internal "hash" link support (inc. scroll position restoration)
 * Choose multiple DOM update targets
 * Form handling (inc. `POST`/`GET` and `enctypes`)
 * Highly configurable - customise behaviour via [options](#options)
