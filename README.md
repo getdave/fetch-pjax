@@ -153,6 +153,10 @@ Option | Type | Default | Description
 `autoInit` | `boolean` | `true` | determines whether `FetchPjax` should initialise itself by default when a new instance is created. Useful for situations where you might need to defer execution.
 `eventType` | `string` | `click` | defines the event type on which to listen to trigger a PJAX cycle. For example, specifying `touchstart` would then only trigger PJAX for `touchstart` events.
 `selector` | `string` | `a` | a valid DOM selector for the elements on which you wish to listen for clicks (or other valid `eventType`)
+`ignoreSelector` | `string` | `[data-fetch-pjax-ignore]` | a valid DOM selector for the elements which you wish to _exclude_ from being handled by PJAX.  
+`handleForms` | `boolean` | `true` | determines whether or not FetchPjax should handle Form `submit` events
+`formSelector` | `string` | `form` | a valid DOM selector for any Forms within the document which you wish to be handeled by PJAX (only applied if `handleForms` is truthy)
+
 `targets` | `object` | `{ content: 'main', title: 'title' }` | defines which portions of the page should be replaced by the Ajax'd content on each PJAX request. The object keys _must_ be unique, but are entirely arbitary and can be anything that helps you to identify them. The object values must be a valid DOM selector for an element which _must_ exist within the page DOM at the point of creating a `FetchPjax` instance
 `popStateFauxLoadTime` | `int` | `300` | a period (in milliseconds) to wait before cached content retrieved from the `history.state` is used to update the DOM. This is intended to improve the user experience by simulating a network request delay. Without this content is replaced too quickly to be perceivable. Only utilised when the `popStateUseContentCache` option is set to `true` 
 `fetchOptions` | `object` | `{ headers: { 'X-PJAX': true } }` | sets the options argument sent to the underlying `fetch(url, options={})` call for each PJAX request. Must be a valid options object as provided to the second `init` argument of the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Syntax). To overide on a per-request basis, see [`modifyFetchOptions`](#callbacks)
@@ -181,7 +185,8 @@ Callback | Args    | Description
 ### Example Callback usage
 
 ```javascript
-new FetchPjax({	
+new FetchPjax({
+	
 	callbacks: {
         onBeforePjax: (instance, fetchOptions) => {
         	// do something here
