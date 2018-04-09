@@ -1,6 +1,6 @@
 {
   "name": "fetch-pjax",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "main": "dist/fetch-pjax.cjs.js",
   "module": "dist/fetch-pjax.esm.js",
   "browser": "dist/fetch-pjax.umd.js",
